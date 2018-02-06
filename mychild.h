@@ -14,6 +14,7 @@ class MyChild : public QTextEdit
 public:
     MyChild();
     void newFile();     // 新建文件
+    bool loadFile(const QString &fileName);
 
     QString pureCurrentFile();
     QString currentFile() { return curFile; }
@@ -23,6 +24,8 @@ protected:
 private:
 
     QString strippedName(const QString &fullFileName);
+    void setCurrentFile(const QString &fileName);
+
     QString curFile;
     bool isUntitled;
 private slots:
