@@ -27,6 +27,7 @@ private:
     void readSetting(void);
     void writeSetting(void);
     MyChild *activeMyChild(void);
+    QMdiSubWindow *findMyChild(const QString &fileName);
 
     QMdiArea *mdiArea;
     QSignalMapper *windowMapper;
@@ -56,6 +57,8 @@ private:
 private slots:
     void about();
     void newChild();
+    void openFile();
+
     void updateMenus();
     MyChild *createMyChild();
     void updateWindowMenu();

@@ -17,6 +17,9 @@
 #include <QString>
 #include <QWidget>
 #include <QCloseEvent>
+#include <QFileDialog>
+#include <QMdiSubWindow>
+#include <QStatusBar>
 #include "mainwindow.h"
 #include "mychild.h"
 
@@ -105,7 +108,7 @@ void MainWindow::createActions(void)
     popenAct = new QAction(tr("打开(&O)"), this);
     popenAct->setShortcuts(QKeySequence::Open);
     popenAct->setStatusTip(tr("打开一个文件"));
-    //connect(popenAct, &QAction::triggered, this, &MyMdi::openFile);
+    connect(popenAct, &QAction::triggered, this, &MainWindow::openFile);
     pfileMenu->addAction(popenAct);
 
     psaveAct = new QAction(tr("保存(&S)"), this);
@@ -280,5 +283,36 @@ void MainWindow::paste()
 {
     if (activeMyChild()) {
         activeMyChild()->paste();
+    }
+}
+
+QMdiSubWindow *MainWindow::findMyChild(const QString &fileName)
+{
+    QString canonicalFilePath = QFileInfo(fileName).canonicalFilePath();
+    foreach (QMdiSubWindow *window, mdiArea->subWindowList()) {
+        MyChild *myChild = qobject_cast<MyChild *>(window->widget());
+        if (myChild->currentFile() == canonicalFilePath) {
+            return window;
+        }
+    }
+    return 0;
+}
+
+void MainWindow::openFile()
+{
+    QString fileName = QFileDialog::getOpenFileName(this);
+    if (!fileName.isEmpty()) {
+        QMdiSubWindow *existing = findMyChild(fileName);
+        if (existing) {
+            mdiArea->setActiveSubWindow(existing);
+            return;
+        }
+        MyChild *child = createMyChild();
+        if (child->loadFile(fileName)) {
+            statusBar()->showMessage(tr("文件已打开"), 2000);
+            child->show();
+        } else {
+            child->close();
+        }
     }
 }
