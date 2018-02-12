@@ -15,6 +15,9 @@ public:
     MyChild();
     void newFile();     // 新建文件
     bool loadFile(const QString &fileName);
+    bool save();
+    bool saveAs();
+    bool saveFile(const QString &fileName);
 
     QString pureCurrentFile();
     QString currentFile() { return curFile; }
@@ -25,6 +28,7 @@ private:
 
     QString strippedName(const QString &fullFileName);
     void setCurrentFile(const QString &fileName);
+    bool maybeSave();
 
     QString curFile;
     bool isUntitled;

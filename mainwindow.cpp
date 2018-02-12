@@ -114,13 +114,13 @@ void MainWindow::createActions(void)
     psaveAct = new QAction(tr("保存(&S)"), this);
     psaveAct->setShortcuts(QKeySequence::Save);
     psaveAct->setStatusTip(tr("保存该文件"));
-    //connect(psaveAct, &QAction::triggered, this, &MyMdi::saveFile);
+    connect(psaveAct, &QAction::triggered, this, &MainWindow::fileSave);
     pfileMenu->addAction(psaveAct);
 
     psaveAsAct = new QAction(tr("另存为(&A)..."), this);
     psaveAsAct->setShortcuts(QKeySequence::SaveAs);
     psaveAsAct->setStatusTip(tr("另存为该文件"));
-    //connect(psaveAsAct, &QAction::triggered, this, &MyMdi::saveFile);
+    connect(psaveAsAct, &QAction::triggered, this, &MainWindow::fileSaveAs);
     pfileMenu->addAction(psaveAsAct);
 
     pexitAct = new QAction(tr("退出(&X)"), this);
@@ -314,5 +314,19 @@ void MainWindow::openFile()
         } else {
             child->close();
         }
+    }
+}
+
+void MainWindow::fileSave()
+{
+    if (activeMyChild() && activeMyChild()->save()) {
+        statusBar()->showMessage(tr("文件保存成功"), 2000);
+    }
+}
+
+void MainWindow::fileSaveAs()
+{
+    if (activeMyChild() && activeMyChild()->saveAs()) {
+        statusBar()->showMessage(tr("文件保存成功"), 2000);
     }
 }

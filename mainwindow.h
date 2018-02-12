@@ -58,6 +58,8 @@ private slots:
     void about();
     void newChild();
     void openFile();
+    void fileSave();
+    void fileSaveAs();
 
     void updateMenus();
     MyChild *createMyChild();
