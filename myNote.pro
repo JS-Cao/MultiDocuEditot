@@ -14,7 +14,9 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    mychild.cpp
+    mychild.cpp \
+    linenumberarea.cpp
 
 HEADERS  += mainwindow.h \
-    mychild.h
+    mychild.h \
+    linenumberarea.h

@@ -1,3 +1,4 @@
+﻿#include <cstdio>
 #include <QMenu>
 #include <QMenuBar>
 #include <QAction>
@@ -20,25 +21,37 @@
 #include <QFileDialog>
 #include <QMdiSubWindow>
 #include <QStatusBar>
+#include <QTabWidget>
+#include <QDebug>
+#include <QLabel>
+#include <QTextBlock>
+#include <QDockWidget>
+#include <QLabel>
+#include <QPlainTextEdit>
 #include "mainwindow.h"
 #include "mychild.h"
+
+#pragma execution_character_set("utf-8")
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     mdiArea = new QMdiArea;
-    mdiArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    mdiArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    setCentralWidget(mdiArea);
+
+    fileTab = new QTabWidget(this);
     setWindowTitle(tr("多文档编辑器"));
+
+    setCentralWidget(fileTab);
+    fileTab->setMovable(true);
+    fileTab->setContextMenuPolicy(Qt::CustomContextMenu);
+    fileTab->setTabsClosable(true);
+    fileTab->setTabShape(QTabWidget::Rounded);
+
     createActions();
     updateMenus();
 
-    windowMapper = new QSignalMapper(this);
-    void (QSignalMapper::*pmapped_qwidget)(QWidget *) = &QSignalMapper::mapped;
-    connect(windowMapper, pmapped_qwidget, this, &MainWindow::setActiveSubWindow);
+    connect(fileTab, &QTabWidget::currentChanged, this, &MainWindow::updateMenus);
 
-    connect(mdiArea, &QMdiArea::subWindowActivated, this, &MainWindow::updateMenus);
     readSetting();
 }
 
@@ -57,6 +70,7 @@ void MainWindow::setActiveSubWindow(QWidget *window)
 
 void MainWindow::updateMenus()
 {
+    //qDebug() << __FUNCTION__;
     bool hasMyChild = (activeMyChild() != 0);
     psaveAct->setEnabled(hasMyChild);
     psaveAsAct->setEnabled(hasMyChild);
@@ -67,20 +81,28 @@ void MainWindow::updateMenus()
     bool hasSelection = (activeMyChild() && activeMyChild()->textCursor().hasSelection());
     pcopyAct->setEnabled(hasSelection);
     pcutAct->setEnabled(hasSelection);
+
+    MyChild *p_childText = qobject_cast<MyChild *>(activeMyChild());
+    if (p_childText != NULL) {
+        int lineNum = p_childText->document()->lineCount();
+        statusBar()->showMessage(tr("Line %1").arg(lineNum), 0);
+        //qDebug() << lineNum;
+    }
 }
 
 MyChild *MainWindow::activeMyChild()
 {
-    if (QMdiSubWindow *activeSubWindow = mdiArea->activeSubWindow()) {
-        return qobject_cast<MyChild *>(activeSubWindow->widget());
+    if (QWidget *activeSubWindow = fileTab->currentWidget()) {
+        return qobject_cast<MyChild *>(activeSubWindow);
     }
-    return 0;
+
+    return NULL;
 }
 
 MyChild * MainWindow::createMyChild()
 {
     MyChild * child = new MyChild;
-    mdiArea->addSubWindow(child);
+
     connect(child, &MyChild::copyAvailable, pcutAct, &QAction::setEnabled);
     connect(child, &MyChild::copyAvailable, pcopyAct, &QAction::setEnabled);
     return child;
@@ -89,8 +111,15 @@ MyChild * MainWindow::createMyChild()
 
 void MainWindow::newChild()
 {
+    //qDebug() << __FUNCTION__;
     MyChild * child = createMyChild();
     child->newFile();
+    int index = fileTab->addTab(child, child->pureCurrentFile());
+    fileTab->setCurrentIndex(index);
+    child->setId(index);
+    connect(fileTab, &QTabWidget::tabCloseRequested, child, &MyChild::closefile);
+    connect(this, &MainWindow::subIdRestore, child, &MyChild::restoreId);
+
     child->show();
 }
 
@@ -211,17 +240,11 @@ void MainWindow::updateWindowMenu()
 void MainWindow::readSetting()
 {
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
-    /*const QByteArray geometry = settings.value("geometry", QByteArray()).toByteArray();
-    if (geometry.isEmpty()) {
-        const QRect availableGeometry = QApplication::desktop()->availableGeometry(this);
-        resize(availableGeometry.width() / 2, availableGeometry.height() / 2);
-        move((availableGeometry.width() - width()) / 2,
-             (availableGeometry.height() - height()) / 2);
-    } else {
-        restoreGeometry(geometry);
-    }*/
-    QPoint pos = settings.value("pos", QPoint(200,200)).toPoint();
-    QSize size = settings.value("size", QSize(400, 400)).toSize();
+    int Dwidth = QApplication::desktop()->width();
+    int Dheight = QApplication::desktop()->height();
+    //qDebug() << Dwidth << " " << Dheight;
+    QPoint pos = settings.value("pos", QPoint(int(Dwidth * 0.2),int(Dheight * 0.1))).toPoint();
+    QSize size = settings.value("size", QSize(int(Dwidth * 0.6), int(Dheight * 0.75))).toSize();
     move(pos);
     resize(size);
 }
@@ -231,24 +254,50 @@ void MainWindow::writeSetting()
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
     settings.setValue("pos", pos());
     settings.setValue("size", size());
-    //settings.value("geometry", saveGeometry());
 }
 
+/**
+  * @brief 设置子窗口是否接收关闭事件
+  * @param
+  *     arg1：0-接收   1-忽略
+  * @return none
+  * @auther JSCao
+  * @date   2018-08-25
+  */
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    mdiArea->closeAllSubWindows();
-    if (mdiArea->currentSubWindow()) {
+    int i = fileTab->count();
+    int targetIndex = 0;
+
+    for (; i > 0; i--) {
+       MyChild *target = qobject_cast<MyChild *>(fileTab->widget(targetIndex));
+       target->setClosedFlag(-1);
+       emit fileTab->tabCloseRequested(targetIndex);
+
+       while (-1 == target->closedFlag()) ;
+       if (0 == target->closedFlag()) {
+           fileTab->removeTab(targetIndex);
+           delete target;
+       } else {
+           emit subIdRestore(targetIndex);
+           targetIndex++;
+       }
+    }
+
+    if (fileTab->count() != 0) {
         event->ignore();
     } else {
         event->accept();
     }
+
     writeSetting();
 }
 
 void MainWindow::about()
 {
     QMessageBox::about(this, tr("说明"), tr("本<b>多文档编辑器</b>"
-                                            "这是本人的第一个编辑器"));
+                                            "是曹靖松专属\n"
+                                            "邮箱：cjsmcu@gmail.com"));
 }
 
 void MainWindow::undo()
@@ -298,18 +347,40 @@ QMdiSubWindow *MainWindow::findMyChild(const QString &fileName)
     return 0;
 }
 
+QWidget *MainWindow::findTagMyChild(const QString &fileName)
+{
+    QString canonicalFilePath = QFileInfo(fileName).canonicalFilePath();
+    QWidget *tagSubWindow = NULL;
+    for (int i = 0; i < fileTab->count(); i++) {
+        tagSubWindow = fileTab->widget(i);
+        MyChild *myChild = qobject_cast<MyChild *>(tagSubWindow);
+        if (myChild->currentFile() == canonicalFilePath) {
+            return tagSubWindow;
+        }
+    }
+    return NULL;
+}
+
 void MainWindow::openFile()
 {
     QString fileName = QFileDialog::getOpenFileName(this);
+
     if (!fileName.isEmpty()) {
-        QMdiSubWindow *existing = findMyChild(fileName);
+        //QMdiSubWindow *existing = findMyChild(fileName);
+        QWidget *existing = findTagMyChild(fileName);
         if (existing) {
-            mdiArea->setActiveSubWindow(existing);
+            //mdiArea->setActiveSubWindow(existing);
+            fileTab->setCurrentWidget(existing);
             return;
         }
         MyChild *child = createMyChild();
         if (child->loadFile(fileName)) {
             statusBar()->showMessage(tr("文件已打开"), 2000);
+            int index = fileTab->addTab(child, child->pureCurrentFile());
+            fileTab->setCurrentIndex(index);
+            child->setId(index);
+            connect(fileTab, &QTabWidget::tabCloseRequested, child, &MyChild::closefile);
+            //connect(fileTab, &QTabWidget::tabCloseRequested, child, &MyChild::updateId);
             child->show();
         } else {
             child->close();
@@ -329,4 +400,9 @@ void MainWindow::fileSaveAs()
     if (activeMyChild() && activeMyChild()->saveAs()) {
         statusBar()->showMessage(tr("文件保存成功"), 2000);
     }
+}
+
+void MainWindow::clearFileBit(int index)
+{
+    clearBit(fileBitIndex, index);
 }
