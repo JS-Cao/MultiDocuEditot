@@ -82,6 +82,11 @@ void MainWindow::updateMenus()
     pcopyAct->setEnabled(hasSelection);
     pcutAct->setEnabled(hasSelection);
 
+    bool hasChanged = (activeMyChild() && activeMyChild()->document()->isUndoAvailable());
+    pundoAct->setEnabled(hasChanged);
+    hasChanged = (activeMyChild() && activeMyChild()->document()->isRedoAvailable());
+    predoAct->setEnabled(hasChanged);
+
     MyChild *p_childText = qobject_cast<MyChild *>(activeMyChild());
     if (p_childText != NULL) {
         int lineNum = p_childText->document()->lineCount();
@@ -103,8 +108,11 @@ MyChild * MainWindow::createMyChild()
 {
     MyChild * child = new MyChild;
 
-    connect(child, &MyChild::copyAvailable, pcutAct, &QAction::setEnabled);
+    connect(child, &MyChild::copyAvailable, pcutAct,  &QAction::setEnabled);
     connect(child, &MyChild::copyAvailable, pcopyAct, &QAction::setEnabled);
+    connect(child, &MyChild::redoAvailable, predoAct, &QAction::setEnabled);
+    connect(child, &MyChild::undoAvailable, pundoAct, &QAction::setEnabled);
+
     return child;
 }
 
@@ -167,7 +175,7 @@ void MainWindow::createActions(void)
     peditMenu->addAction(pundoAct);
 
     predoAct = new QAction(tr("恢复(&R)"), this);
-    predoAct->setShortcuts(QKeySequence::Undo);
+    predoAct->setShortcuts(QKeySequence::Redo);
     predoAct->setStatusTip(tr("恢复上一次操作"));
     connect(predoAct, &QAction::triggered, this, &MainWindow::redo);
     peditMenu->addAction(predoAct);
@@ -185,7 +193,7 @@ void MainWindow::createActions(void)
     connect(pcopyAct, &QAction::triggered, this, &MainWindow::copy);
     peditMenu->addAction(pcopyAct);
 
-    ppasteAct = new QAction(tr("粘贴"), this);
+    ppasteAct = new QAction(tr("粘贴(&P)"), this);
     ppasteAct->setShortcuts(QKeySequence::Paste);
     ppasteAct->setStatusTip(tr("粘贴"));
     connect(ppasteAct, &QAction::triggered, this, &MainWindow::paste);
