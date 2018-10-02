@@ -20,3 +20,5 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     mychild.h \
     linenumberarea.h
+
+RC_FILE = proj.rc
