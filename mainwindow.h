@@ -74,6 +74,7 @@ private:
     QAction *pseparatorAct;
 
     QMenu *paboutMenu;
+    QAction *paboutQt;
 
 private slots:
     void about();
@@ -92,6 +93,7 @@ private slots:
     void cut();
     void copy();
     void paste();
+    void aboutQt();
     void clearFileBit(int index);
 signals:
     void subIdRestore(int id);

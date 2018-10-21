@@ -54,6 +54,7 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent)
 
     readSetting();
 
+    // 如果参数个数等于2表示该程序通过某一文本文件打开，并将该文本文件路径传递给该应用
     if (2 == argc) {
         openAssignFile(*(argv + 1));
     }
@@ -221,6 +222,9 @@ void MainWindow::createActions(void)
     paboutMenu = menuBar()->addMenu(tr("帮助(A)"));
     QAction *aboutAct = paboutMenu->addAction(tr("关于"), this, &MainWindow::about);
     aboutAct->setStatusTip(tr("简要说明"));
+    paboutQt = new QAction(tr("关于Qt"), this);
+    paboutMenu->addAction(paboutQt);
+    connect(paboutQt, &QAction::triggered, this, &MainWindow::aboutQt);
 }
 
 void MainWindow::updateWindowMenu()
@@ -307,9 +311,15 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::about()
 {
-    QMessageBox::about(this, tr("说明"), tr("本<b>多文档编辑器</b>"
-                                            "是曹靖松专属\n"
-                                            "邮箱：cjsmcu@gmail.com"));
+    QMessageBox::about(this, tr("说明"), tr("<b>多文档编辑器</b><br>"
+                                            "<pre><b>作者：</b>    曹靖松<br>"
+                                            "<b>邮箱：</b>    cjsmcu@gmail.com<br>"
+                                            "<b>项目链接：</b> <a href=\"https://github.com/JS-Cao/MultiDocuEditot\">https://github.com/JS-Cao/MultiDocuEditot</a></pre>"));
+}
+
+void MainWindow::aboutQt()
+{
+    QMessageBox::aboutQt(this);
 }
 
 void MainWindow::undo()
@@ -373,16 +383,23 @@ QWidget *MainWindow::findTagMyChild(const QString &fileName)
     return NULL;
 }
 
+/**
+  * @brief 打开指定路径文件
+  * @param
+  *     arg:    指定文件路径及文件名
+  * @return none
+  * @auther JSCao
+  * @date   2018-10-21
+  */
 void MainWindow::openAssignFile(QString fileName)
 {
     if (!fileName.isEmpty()) {
-        //QMdiSubWindow *existing = findMyChild(fileName);
         QWidget *existing = findTagMyChild(fileName);
         if (existing) {
-            //mdiArea->setActiveSubWindow(existing);
             fileTab->setCurrentWidget(existing);
             return;
         }
+
         MyChild *child = createMyChild();
         if (child->loadFile(fileName)) {
             statusBar()->showMessage(tr("文件已打开"), 2000);
@@ -390,7 +407,6 @@ void MainWindow::openAssignFile(QString fileName)
             fileTab->setCurrentIndex(index);
             child->setId(index);
             connect(fileTab, &QTabWidget::tabCloseRequested, child, &MyChild::closefile);
-            //connect(fileTab, &QTabWidget::tabCloseRequested, child, &MyChild::updateId);
             child->show();
         } else {
             child->close();
