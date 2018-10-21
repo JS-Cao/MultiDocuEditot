@@ -33,7 +33,7 @@
 
 #pragma execution_character_set("utf-8")
 
-MainWindow::MainWindow(QWidget *parent)
+MainWindow::MainWindow(int argc, char *argv[], QWidget *parent)
     : QMainWindow(parent)
 {
     mdiArea = new QMdiArea;
@@ -53,6 +53,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(fileTab, &QTabWidget::currentChanged, this, &MainWindow::updateMenus);
 
     readSetting();
+
+    if (2 == argc) {
+        openAssignFile(*(argv + 1));
+    }
 }
 
 MainWindow::~MainWindow()
@@ -368,6 +372,32 @@ QWidget *MainWindow::findTagMyChild(const QString &fileName)
     }
     return NULL;
 }
+
+void MainWindow::openAssignFile(QString fileName)
+{
+    if (!fileName.isEmpty()) {
+        //QMdiSubWindow *existing = findMyChild(fileName);
+        QWidget *existing = findTagMyChild(fileName);
+        if (existing) {
+            //mdiArea->setActiveSubWindow(existing);
+            fileTab->setCurrentWidget(existing);
+            return;
+        }
+        MyChild *child = createMyChild();
+        if (child->loadFile(fileName)) {
+            statusBar()->showMessage(tr("文件已打开"), 2000);
+            int index = fileTab->addTab(child, child->pureCurrentFile());
+            fileTab->setCurrentIndex(index);
+            child->setId(index);
+            connect(fileTab, &QTabWidget::tabCloseRequested, child, &MyChild::closefile);
+            //connect(fileTab, &QTabWidget::tabCloseRequested, child, &MyChild::updateId);
+            child->show();
+        } else {
+            child->close();
+        }
+    }
+}
+
 
 void MainWindow::openFile()
 {

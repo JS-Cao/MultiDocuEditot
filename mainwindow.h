@@ -20,7 +20,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = 0);
+    MainWindow(int argc, char *argv[], QWidget *parent = 0);
     inline void setBit(unsigned int &index, const int bit)
     {
         index |= ((unsigned int)1 << bit);
@@ -45,6 +45,7 @@ private:
     MyChild *activeMyChild(void);
     QMdiSubWindow *findMyChild(const QString &fileName);
     QWidget *findTagMyChild(const QString &fileName);
+    void openAssignFile(QString fileName);
 
     QMdiArea *mdiArea;
     QSignalMapper *windowMapper;
