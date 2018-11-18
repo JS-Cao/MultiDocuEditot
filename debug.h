@@ -1,5 +1,5 @@
-﻿#ifndef DEBUG_H
-#define DEBUG_H
+﻿#ifndef _DEBUG_H_
+#define _DEBUG_H_
 
 #include <QFile>
 #include <QString>
@@ -23,7 +23,7 @@ enum DEBUG_MODE {
     DEBUG   = 0x01 << 0,
     INFO    = 0x01 << 1,
     WARN    = 0x01 << 2,
-    ERROR   = 0x01 << 3,
+    ERR     = 0x01 << 3,
     FATAL   = 0x01 << 4,
     RELEASE = 0x01 << 5,
 };
@@ -46,6 +46,7 @@ enum DEBUG_MODE {
             *g_debug.getOutStream() << g_time.currentTime().toString("[hh:mm:ss(zzz)] ")\
                                     << __FUNCTION__ << "(" << __LINE__ << ")," \
                                     << g_debug.debugPrint(str,__VA_ARGS__) << "\n";\
+            g_debug.logFlush();\
         }\
     }
 
@@ -63,6 +64,7 @@ public:
     int getLevel(void) { return m_level; }
     QTextStream *getOutStream(void) {return m_logStream; }
     const char* debugPrint(const char *,...);
+    void logFlush(void);
 
 private:
     unsigned int m_level;    // debug level

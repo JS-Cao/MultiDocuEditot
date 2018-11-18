@@ -2,6 +2,7 @@
 
 #define BUF_SIZE 256
 char g_buf[BUF_SIZE] = {0};
+
 /**
   * @brief 构造函数
   * @param
@@ -44,6 +45,11 @@ debug::~debug(void)
     delete m_logStream;
     delete m_logFile;
     delete m_logDir;
+}
+
+void debug::logFlush(void)
+{
+    m_logStream->flush();
 }
 
 /**

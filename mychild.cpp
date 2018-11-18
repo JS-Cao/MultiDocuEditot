@@ -23,30 +23,33 @@
 #include <QtWidgets>
 #include "linenumberarea.h"
 #include "mainwindow.h"
+#include "debug.h"
 
 #pragma execution_character_set("utf-8")
+
+extern debug g_debug;
 
 MyChild::MyChild()
 {
     setAttribute(Qt::WA_DeleteOnClose);
-    lineNumberArea = new LineNumberArea(this);
+    //lineNumberArea = new LineNumberArea(this);
 
     scrollToBlockNum = -1;
     scrollToBlockStep = -1;
     blockNumsPerPage = -1;
     idIsChanged = false;
 
-    this->verticalScrollBar()->setSingleStep(17);
-    this->verticalScrollBar()->setPageStep(17);
-    this->verticalScrollBar()->connect(verticalScrollBar(), &QScrollBar::valueChanged, this, &MyChild::FirstVisibleBlockNum);
-    this->verticalScrollBar()->connect(verticalScrollBar(), &QScrollBar::rangeChanged, this, &MyChild::scrollMapToBlock);
+    //this->verticalScrollBar()->setSingleStep(17);
+    //this->verticalScrollBar()->setPageStep(17);
+    //this->verticalScrollBar()->connect(verticalScrollBar(), &QScrollBar::valueChanged, this, &MyChild::FirstVisibleBlockNum);
+    //this->verticalScrollBar()->connect(verticalScrollBar(), &QScrollBar::rangeChanged, this, &MyChild::scrollMapToBlock);
 
-    connect(this, &MyChild::textChanged, this, &MyChild::updateLineNumberAreaWidth);
-    connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(highlightCurrentLine()));
-    connect(document(), &QTextDocument::blockCountChanged, this, &MyChild::_updateLineNumberArea);
-    connect(verticalScrollBar(), &QScrollBar::valueChanged, this, &MyChild::_updateLineNumberArea);
+    //connect(this, &MyChild::textChanged, this, &MyChild::updateLineNumberAreaWidth);
+    //connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(highlightCurrentLine()));
+    //connect(document(), &QTextDocument::blockCountChanged, this, &MyChild::_updateLineNumberArea);
+    //connect(verticalScrollBar(), &QScrollBar::valueChanged, this, &MyChild::_updateLineNumberArea);
 
-    updateLineNumberAreaWidth();
+    //updateLineNumberAreaWidth();
     highlightCurrentLine();
     isUntitled = true;
 }
@@ -88,7 +91,6 @@ void MyChild::newFile()
     isUntitled = true;
 
     curFile = tr("新建文档%1").arg(sequenceNumber++);
-    setWindowTitle(curFile + "[*]");
     connect(document(), &QTextDocument::contentsChanged, this, &MyChild::documentWasModified);
 }
 
@@ -121,6 +123,7 @@ void MyChild::closeEvent(QCloseEvent *event)
 
 bool MyChild::loadFile(const QString &fileName)
 {
+    printLog(DEBUG, "loadFile %s.", (const char *)fileName.toUtf8());
     if (!fileName.isEmpty()) {
         QFile file(fileName);
         if (!file.open(QFile::ReadOnly | QFile::Text)) {
@@ -144,8 +147,6 @@ void MyChild::setCurrentFile(const QString &fileName)
     curFile = QFileInfo(fileName).canonicalFilePath();  // 返回绝对路劲
     isUntitled = false;
     document()->setModified(false);
-    setWindowModified(false);   // 去*
-    setWindowTitle(pureCurrentFile() + tr("[*]"));
 }
 
 bool MyChild::save()
@@ -300,6 +301,7 @@ void MyChild::updateLineNumberArea(const QRect &rect, int dy)
         updateLineNumberAreaWidth();
 }
 
+/*
 void MyChild::resizeEvent(QResizeEvent *e)
 {
     QTextEdit::resizeEvent(e);
@@ -308,7 +310,7 @@ void MyChild::resizeEvent(QResizeEvent *e)
 
     lineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
 }
-
+*/
 /**
   * @brief 绘制行号
   * @param
@@ -322,6 +324,7 @@ void MyChild::lineNumberAreaPaintEvent(QPaintEvent *event)
     QPainter painter(lineNumberArea);
     painter.fillRect(event->rect(), Qt::lightGray);
     int _blockNumber = 1;
+
     QTextBlock block = document()->firstBlock();
 
     blockNumsPerPage = frameGeometry().bottom() / document()->documentLayout()->blockBoundingRect(block).height();

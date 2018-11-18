@@ -33,7 +33,7 @@ public:
     int lineNumberAreaWidth(void);
 protected:
     void closeEvent(QCloseEvent *event);
-    void resizeEvent(QResizeEvent *event) override;
+    //void resizeEvent(QResizeEvent *event) override;
 private:
     bool idIsChanged;
     int myId;

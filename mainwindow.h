@@ -13,32 +13,22 @@ class QSignalMapper;
 class QWidget;
 class QTabWidget;
 class QLabel;
+class QStatusBar;
+class QTextEdit;
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-
 public:
     MainWindow(int argc, char *argv[], QWidget *parent = 0);
-    inline void setBit(unsigned int &index, const int bit)
-    {
-        index |= ((unsigned int)1 << bit);
-    }
-    inline void clearBit(unsigned int &index, const int bit)
-    {
-        index &= ~((unsigned int)1 << bit);
-    }
-    inline bool isSet(unsigned int &index, const int bit)
-    {
-        return index & ((unsigned int)1 << bit);
-    }
     ~MainWindow();
+
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
-private:
-    unsigned int fileBitIndex;
 
+private:
+    /* function */
     void createActions(void);
     void readSetting(void);
     void writeSetting(void);
@@ -46,10 +36,9 @@ private:
     QMdiSubWindow *findMyChild(const QString &fileName);
     QWidget *findTagMyChild(const QString &fileName);
     void openAssignFile(QString fileName);
+    void createStatusBar(QStatusBar *p_statusBar);
 
-    QMdiArea *mdiArea;
-    QSignalMapper *windowMapper;
-
+    /* variable */
     QTabWidget *fileTab;
     QLabel *lineLabel;
 
@@ -68,13 +57,20 @@ private:
     QAction *ppasteAct;
 
     QMenu *pwindowMenu;
-    QAction *ptileAct;
-    QAction *pcascadeAct;
 
     QAction *pseparatorAct;
 
     QMenu *paboutMenu;
     QAction *paboutQt;
+    /* StatusBar */
+    QString lineAndColCount;
+    QString totalCountStr;
+    QLabel *countLabel;
+    QLabel *totalLabel;
+    int totalCount;
+    int lineNum;
+    int colNum;
+    int selectContent;
 
 private slots:
     void about();
@@ -85,8 +81,6 @@ private slots:
 
     void updateMenus();
     MyChild *createMyChild();
-    void updateWindowMenu();
-    void setActiveSubWindow(QWidget *window);
 
     void undo();
     void redo();
@@ -94,7 +88,11 @@ private slots:
     void copy();
     void paste();
     void aboutQt();
-    void clearFileBit(int index);
+
+    void lineAndColmessage(void);
+    void textTotalCount(void);
+    void setWinFileTitle(void);
+    void setTitlePostfix(bool isChanged);
 signals:
     void subIdRestore(int id);
 };

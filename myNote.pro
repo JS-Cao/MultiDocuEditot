@@ -15,10 +15,14 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     mychild.cpp \
-    linenumberarea.cpp
+    linenumberarea.cpp \
+    error.cpp \
+    debug.cpp
 
 HEADERS  += mainwindow.h \
     mychild.h \
-    linenumberarea.h
+    linenumberarea.h \
+    error.h \
+    debug.h
 
 RC_FILE = proj.rc

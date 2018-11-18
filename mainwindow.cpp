@@ -27,19 +27,45 @@
 #include <QTextBlock>
 #include <QDockWidget>
 #include <QLabel>
+#include <QLineEdit>
 #include <QPlainTextEdit>
 #include "mainwindow.h"
 #include "mychild.h"
+#include "debug.h"
 
 #pragma execution_character_set("utf-8")
 
+#define LINECOLCOUNT "Line:%d\tCol:%d\tsel(%d)\t"
+#define TOTALCOUNT "Total:%d"
+
+extern debug g_debug;
+
+/**
+  * @brief 构造函数
+  * @param
+  *     arg1：main函数参数个数
+  *     arg2：main函数各个参数
+  *     arg3：父组件
+  * @return none
+  * @auther JSCao
+  * @date   2018-08-25
+  */
 MainWindow::MainWindow(int argc, char *argv[], QWidget *parent)
     : QMainWindow(parent)
 {
-    mdiArea = new QMdiArea;
-
-    fileTab = new QTabWidget(this);
+    printLog(DEBUG, "starting mainwindow......");
     setWindowTitle(tr("多文档编辑器"));
+
+    try {
+        fileTab = new QTabWidget(this);
+        // create menubar
+        createActions();
+    }
+    catch(std::bad_alloc &memExc) {
+        qDebug() << memExc.what();
+        printLog(DEBUG, "mainwindow init failed!!!");
+        return;
+    }
 
     setCentralWidget(fileTab);
     fileTab->setMovable(true);
@@ -47,7 +73,6 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent)
     fileTab->setTabsClosable(true);
     fileTab->setTabShape(QTabWidget::Rounded);
 
-    createActions();
     updateMenus();
 
     connect(fileTab, &QTabWidget::currentChanged, this, &MainWindow::updateMenus);
@@ -58,90 +83,60 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent)
     if (2 == argc) {
         openAssignFile(*(argv + 1));
     }
+    createStatusBar(statusBar());
+    connect(fileTab, &QTabWidget::currentChanged, this, &MainWindow::setWinFileTitle);
+    connect(fileTab, &QTabWidget::currentChanged, this, &MainWindow::textTotalCount);
+
+    printLog(DEBUG, "starting mainwindow success......");
 }
 
+/**
+  * @brief 析构函数
+  * @param none
+  * @return none
+  * @auther JSCao
+  * @date   2018-08-25
+  */
 MainWindow::~MainWindow()
 {
-
+    delete fileTab;
 }
 
-void MainWindow::setActiveSubWindow(QWidget *window)
+/**
+  * @brief 创建各个主菜单和子菜单
+  * @param none
+  * @return none
+  * @auther JSCao
+  * @date   2018-11-13
+  */
+void MainWindow::createStatusBar(QStatusBar *p_statusBar)
 {
-    if (!window) {
-        return;
-    }
-    mdiArea->setActiveSubWindow(qobject_cast<QMdiSubWindow *>(window));
+    lineNum = 1;
+    colNum  = 1;
+    selectContent = 0;
+    totalCount = 0;
+    lineAndColCount.sprintf(LINECOLCOUNT,lineNum, colNum, selectContent);
+    countLabel = new QLabel(lineAndColCount, this);
+    p_statusBar->addPermanentWidget(countLabel, 0);
+    totalCountStr.sprintf(TOTALCOUNT, totalCount);
+    totalLabel = new QLabel(totalCountStr, this);
+    p_statusBar->addPermanentWidget(totalLabel, 0);
+    printLog(DEBUG, "statusBar init success.");
 }
 
-void MainWindow::updateMenus()
-{
-    //qDebug() << __FUNCTION__;
-    bool hasMyChild = (activeMyChild() != 0);
-    psaveAct->setEnabled(hasMyChild);
-    psaveAsAct->setEnabled(hasMyChild);
-    ppasteAct->setEnabled(hasMyChild);
-    ptileAct->setEnabled(hasMyChild);
-    pcascadeAct->setEnabled(hasMyChild);
-
-    bool hasSelection = (activeMyChild() && activeMyChild()->textCursor().hasSelection());
-    pcopyAct->setEnabled(hasSelection);
-    pcutAct->setEnabled(hasSelection);
-
-    bool hasChanged = (activeMyChild() && activeMyChild()->document()->isUndoAvailable());
-    pundoAct->setEnabled(hasChanged);
-    hasChanged = (activeMyChild() && activeMyChild()->document()->isRedoAvailable());
-    predoAct->setEnabled(hasChanged);
-
-    MyChild *p_childText = qobject_cast<MyChild *>(activeMyChild());
-    if (p_childText != NULL) {
-        int lineNum = p_childText->document()->lineCount();
-        statusBar()->showMessage(tr("Line %1").arg(lineNum), 0);
-        //qDebug() << lineNum;
-    }
-}
-
-MyChild *MainWindow::activeMyChild()
-{
-    if (QWidget *activeSubWindow = fileTab->currentWidget()) {
-        return qobject_cast<MyChild *>(activeSubWindow);
-    }
-
-    return NULL;
-}
-
-MyChild * MainWindow::createMyChild()
-{
-    MyChild * child = new MyChild;
-
-    connect(child, &MyChild::copyAvailable, pcutAct,  &QAction::setEnabled);
-    connect(child, &MyChild::copyAvailable, pcopyAct, &QAction::setEnabled);
-    connect(child, &MyChild::redoAvailable, predoAct, &QAction::setEnabled);
-    connect(child, &MyChild::undoAvailable, pundoAct, &QAction::setEnabled);
-
-    return child;
-}
-
-
-void MainWindow::newChild()
-{
-    //qDebug() << __FUNCTION__;
-    MyChild * child = createMyChild();
-    child->newFile();
-    int index = fileTab->addTab(child, child->pureCurrentFile());
-    fileTab->setCurrentIndex(index);
-    child->setId(index);
-    connect(fileTab, &QTabWidget::tabCloseRequested, child, &MyChild::closefile);
-    connect(this, &MainWindow::subIdRestore, child, &MyChild::restoreId);
-
-    child->show();
-}
-
+/**
+  * @brief 创建各个主菜单和子菜单
+  * @param none
+  * @return none
+  * @auther JSCao
+  * @date   2018-08-25
+  */
 void MainWindow::createActions(void)
 {
-    // 创建主菜单以及各个子菜单
-    // 文件菜单
+    // create main menus and sub menus
+    // file menu
     pfileMenu = menuBar()->addMenu(tr("文件(&F)"));
-    pnewAct = new QAction(tr("新建(&N)"), this);
+    pnewAct   = new QAction(tr("新建(&N)"), this);
     pnewAct->setShortcuts(QKeySequence::New);
     pnewAct->setStatusTip(tr("新建文件"));
     connect(pnewAct, &QAction::triggered, this, &MainWindow::newChild);
@@ -149,19 +144,19 @@ void MainWindow::createActions(void)
 
     popenAct = new QAction(tr("打开(&O)"), this);
     popenAct->setShortcuts(QKeySequence::Open);
-    popenAct->setStatusTip(tr("打开一个文件"));
+    popenAct->setStatusTip(tr("打开文件"));
     connect(popenAct, &QAction::triggered, this, &MainWindow::openFile);
     pfileMenu->addAction(popenAct);
 
     psaveAct = new QAction(tr("保存(&S)"), this);
     psaveAct->setShortcuts(QKeySequence::Save);
-    psaveAct->setStatusTip(tr("保存该文件"));
+    psaveAct->setStatusTip(tr("保存文件"));
     connect(psaveAct, &QAction::triggered, this, &MainWindow::fileSave);
     pfileMenu->addAction(psaveAct);
 
     psaveAsAct = new QAction(tr("另存为(&A)..."), this);
     psaveAsAct->setShortcuts(QKeySequence::SaveAs);
-    psaveAsAct->setStatusTip(tr("另存为该文件"));
+    psaveAsAct->setStatusTip(tr("另存为文件"));
     connect(psaveAsAct, &QAction::triggered, this, &MainWindow::fileSaveAs);
     pfileMenu->addAction(psaveAsAct);
 
@@ -171,9 +166,9 @@ void MainWindow::createActions(void)
     connect(pexitAct, &QAction::triggered, qApp, &QApplication::closeAllWindows);
     pfileMenu->addAction(pexitAct);
 
-    // 编辑菜单
+    // edit menu
     peditMenu = menuBar()->addMenu(tr("编辑(&E)"));
-    pundoAct = new QAction(tr("撤销(&U)"), this);
+    pundoAct  = new QAction(tr("撤销(&U)"), this);
     pundoAct->setShortcuts(QKeySequence::Undo);
     pundoAct->setStatusTip(tr("撤销当前操作"));
     connect(pundoAct, &QAction::triggered, this, &MainWindow::undo);
@@ -204,22 +199,11 @@ void MainWindow::createActions(void)
     connect(ppasteAct, &QAction::triggered, this, &MainWindow::paste);
     peditMenu->addAction(ppasteAct);
 
-    // 窗口菜单
+    // window menu
     pwindowMenu = menuBar()->addMenu(tr("窗口(&W)"));
-    //updateWindowMenu();
-    connect(pwindowMenu, &QMenu::aboutToShow, this, &MainWindow::updateWindowMenu);
-    ptileAct = new QAction(tr("平铺(&T)"), this);
-    ptileAct->setStatusTip(tr("平铺子窗口"));
-    //connect(ptileAct, &QAction::triggered, MyMdi, &MyMdi);
-    pwindowMenu->addAction(ptileAct);
-
-    pcascadeAct = new QAction(tr("层叠(&C)"), this);
-    pcascadeAct->setStatusTip(tr("层叠子窗口"));
-    pwindowMenu->addAction(pcascadeAct);
-    updateWindowMenu();
 
     // 帮助菜单
-    paboutMenu = menuBar()->addMenu(tr("帮助(A)"));
+    paboutMenu = menuBar()->addMenu(tr("帮助(&H)"));
     QAction *aboutAct = paboutMenu->addAction(tr("关于"), this, &MainWindow::about);
     aboutAct->setStatusTip(tr("简要说明"));
     paboutQt = new QAction(tr("关于Qt"), this);
@@ -227,44 +211,77 @@ void MainWindow::createActions(void)
     connect(paboutQt, &QAction::triggered, this, &MainWindow::aboutQt);
 }
 
-void MainWindow::updateWindowMenu()
+/**
+  * @brief 返回当前标签页下活跃子窗口
+  * @param none
+  * @return
+  *        成功--当前活跃子窗口
+  *        失败--NULL
+  * @auther JSCao
+  * @date   2018-08-25
+  */
+MyChild *MainWindow::activeMyChild()
 {
-    pwindowMenu->clear();
-    pwindowMenu->addAction(ptileAct);
-    pwindowMenu->addAction(pcascadeAct);
-    pwindowMenu->addSeparator();
-    QList<QMdiSubWindow *> windows = mdiArea->subWindowList();
-    for (int i = 0; i < windows.size(); i++) {
-        MyChild * child = qobject_cast<MyChild *>(windows.at(i)->widget());
-        QString text;
-        if (i < 9) {
-            text = tr("&%1 %2").arg(i + 1).arg(child->pureCurrentFile());
-        } else {
-            text = tr("%1 %2").arg(i + 1).arg(child->pureCurrentFile());
-        }
-        QAction *action = pwindowMenu->addAction(text);
-        action->setCheckable(true);
-        action->setChecked(child == activeMyChild());
-
-        void (QSignalMapper::*pmap_void)(void) = &QSignalMapper::map;
-        connect(action, &QAction::triggered, windowMapper, pmap_void);
-
-        windowMapper->setMapping(action, windows.at(i));
+    if (QWidget *activeSubWindow = fileTab->currentWidget()) {
+        return qobject_cast<MyChild *>(activeSubWindow);
     }
+
+    return NULL;
 }
 
+/**
+  * @brief  更新各个子菜单状态
+  * @param  none
+  * @return none
+  * @auther JSCao
+  * @date   2018-08-25
+  */
+void MainWindow::updateMenus()
+{
+    MyChild *p_activeSubWin = activeMyChild();
+    bool hasMyChild = (p_activeSubWin != NULL);
+
+    psaveAct->setEnabled(hasMyChild);
+    psaveAsAct->setEnabled(hasMyChild);
+    ppasteAct->setEnabled(hasMyChild);
+
+    bool hasSelection = (p_activeSubWin && p_activeSubWin->textCursor().hasSelection());
+    pcopyAct->setEnabled(hasSelection);
+    pcutAct->setEnabled(hasSelection);
+
+    bool hasChanged = (p_activeSubWin && p_activeSubWin->document()->isUndoAvailable());
+    pundoAct->setEnabled(hasChanged);
+    hasChanged = (p_activeSubWin && p_activeSubWin->document()->isRedoAvailable());
+    predoAct->setEnabled(hasChanged);
+    printLog(DEBUG, "update menu success......");
+}
+
+/**
+  * @brief 读取初始化配置
+  * @param  none
+  * @return none
+  * @auther JSCao
+  * @date   2018-08-25
+  */
 void MainWindow::readSetting()
 {
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
     int Dwidth = QApplication::desktop()->width();
     int Dheight = QApplication::desktop()->height();
-    //qDebug() << Dwidth << " " << Dheight;
     QPoint pos = settings.value("pos", QPoint(int(Dwidth * 0.2),int(Dheight * 0.1))).toPoint();
     QSize size = settings.value("size", QSize(int(Dwidth * 0.6), int(Dheight * 0.75))).toSize();
     move(pos);
     resize(size);
+    printLog(DEBUG, "read configuration finish.");
 }
 
+/**
+  * @brief 写入配置以供下回程序启动时读取（待完善）
+  * @param
+  * @return none
+  * @auther JSCao
+  * @date   2018-08-25
+  */
 void MainWindow::writeSetting()
 {
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
@@ -272,42 +289,121 @@ void MainWindow::writeSetting()
     settings.setValue("size", size());
 }
 
+
+/****************************** Place slot functiong in here ***************************************/
+
 /**
-  * @brief 设置子窗口是否接收关闭事件
-  * @param
-  *     arg1：0-接收   1-忽略
+  * @brief 【slot】设置窗口标题后缀
+  * @param  none
   * @return none
   * @auther JSCao
-  * @date   2018-08-25
+  * @date   2018-11-18
   */
-void MainWindow::closeEvent(QCloseEvent *event)
+void MainWindow::setTitlePostfix(bool isChanged)
 {
-    int i = fileTab->count();
-    int targetIndex = 0;
-
-    for (; i > 0; i--) {
-       MyChild *target = qobject_cast<MyChild *>(fileTab->widget(targetIndex));
-       target->setClosedFlag(-1);
-       emit fileTab->tabCloseRequested(targetIndex);
-
-       while (-1 == target->closedFlag()) ;
-       if (0 == target->closedFlag()) {
-           fileTab->removeTab(targetIndex);
-           delete target;
-       } else {
-           emit subIdRestore(targetIndex);
-           targetIndex++;
-       }
-    }
-
-    if (fileTab->count() != 0) {
-        event->ignore();
-    } else {
-        event->accept();
-    }
-
-    writeSetting();
+    setWindowModified(isChanged);
 }
+/**
+  * @brief 【slot】设置窗口标题
+  * @param  none
+  * @return none
+  * @auther JSCao
+  * @date   2018-11-18
+  */
+void MainWindow::setWinFileTitle(void)
+{
+    MyChild *p_activeSubWin = activeMyChild();
+    if (!p_activeSubWin) {
+        return;
+    }
+    bool isChanged = p_activeSubWin->document()->isModified();
+    setWindowModified(isChanged);
+    setWindowTitle(p_activeSubWin->currentFile() + tr("[*]"));
+}
+
+/**
+  * @brief 【slot】更新状态栏信息
+  * @param  none
+  * @return none
+  * @auther JSCao
+  * @date   2018-11-16
+  */
+void MainWindow::textTotalCount(void)
+{
+    MyChild *p_activeSubWin = activeMyChild();
+    if (!p_activeSubWin) {
+        return;
+    }
+    totalCount = p_activeSubWin->textCursor().document()->characterCount() - 1;
+    totalCountStr.sprintf(TOTALCOUNT, totalCount);
+    totalLabel->setText(totalCountStr);
+}
+/**
+  * @brief 【slot】更新状态栏信息
+  * @param  none
+  * @return none
+  * @auther JSCao
+  * @date   2018-11-14
+  */
+void MainWindow::lineAndColmessage(void)
+{
+    MyChild *p_activeSubWin = activeMyChild();
+    if (!p_activeSubWin) {
+        return;
+    }
+    QTextCursor curTextCursor = p_activeSubWin->textCursor();
+    lineNum = curTextCursor.blockNumber() + 1;
+    colNum  = curTextCursor.columnNumber() + 1;
+    selectContent = curTextCursor.selectionEnd() - curTextCursor.selectionStart();
+    lineAndColCount.sprintf(LINECOLCOUNT,lineNum, colNum, selectContent);
+    countLabel->setText(lineAndColCount);
+}
+/**
+  * @brief 【slot】创建新的子窗口
+  * @param  none
+  * @return none
+  * @auther JSCao
+  * @date   2018-08-12
+  */
+MyChild * MainWindow::createMyChild()
+{
+    MyChild * child = new MyChild;
+    if (!child) {
+        printLog(DEBUG, "create child failed!");
+    }
+
+    connect(child, &MyChild::copyAvailable, pcutAct,  &QAction::setEnabled);
+    connect(child, &MyChild::copyAvailable, pcopyAct, &QAction::setEnabled);
+    connect(child, &MyChild::redoAvailable, predoAct, &QAction::setEnabled);
+    connect(child, &MyChild::undoAvailable, pundoAct, &QAction::setEnabled);
+    connect(child, &MyChild::undoAvailable, this, &MainWindow::setTitlePostfix);
+    connect(child, &MyChild::selectionChanged, this, &MainWindow::lineAndColmessage);
+    connect(child, &MyChild::textChanged, this, &MainWindow::textTotalCount);
+    connect(child, &MyChild::cursorPositionChanged, this, &MainWindow::lineAndColmessage);
+
+    return child;
+}
+
+/**
+  * @brief 【slot】创建新的子窗口
+  * @param  none
+  * @return none
+  * @auther JSCao
+  * @date   2018-08-12
+  */
+void MainWindow::newChild()
+{
+    MyChild * child = createMyChild();
+    child->newFile();
+    int index = fileTab->addTab(child, child->pureCurrentFile());
+    fileTab->setCurrentIndex(index);
+    child->setId(index);
+    connect(fileTab, &QTabWidget::tabCloseRequested, child, &MyChild::closefile);
+    connect(this, &MainWindow::subIdRestore, child, &MyChild::restoreId);
+
+    child->show();
+}
+
 
 void MainWindow::about()
 {
@@ -357,16 +453,80 @@ void MainWindow::paste()
     }
 }
 
-QMdiSubWindow *MainWindow::findMyChild(const QString &fileName)
+void MainWindow::openFile()
 {
-    QString canonicalFilePath = QFileInfo(fileName).canonicalFilePath();
-    foreach (QMdiSubWindow *window, mdiArea->subWindowList()) {
-        MyChild *myChild = qobject_cast<MyChild *>(window->widget());
-        if (myChild->currentFile() == canonicalFilePath) {
-            return window;
+    QString fileName = QFileDialog::getOpenFileName(this);
+
+    if (!fileName.isEmpty()) {
+        QWidget *existing = findTagMyChild(fileName);
+        if (existing) {
+            fileTab->setCurrentWidget(existing);
+            return;
+        }
+        MyChild *child = createMyChild();
+        if (child->loadFile(fileName)) {
+            statusBar()->showMessage(tr("文件已打开"), 2000);
+            int index = fileTab->addTab(child, child->pureCurrentFile());
+            fileTab->setCurrentIndex(index);
+            child->setId(index);
+            connect(fileTab, &QTabWidget::tabCloseRequested, child, &MyChild::closefile);
+            child->show();
+        } else {
+            child->close();
         }
     }
-    return 0;
+}
+
+void MainWindow::fileSave()
+{
+    if (activeMyChild() && activeMyChild()->save()) {
+        statusBar()->showMessage(tr("文件保存成功"), 2000);
+    }
+}
+
+void MainWindow::fileSaveAs()
+{
+    if (activeMyChild() && activeMyChild()->saveAs()) {
+        statusBar()->showMessage(tr("文件保存成功"), 2000);
+    }
+}
+/*****************************end of slot function**************************************************/
+
+/**
+  * @brief 设置子窗口是否接收关闭事件
+  * @param
+  *     arg1：0-接收   1-忽略
+  * @return none
+  * @auther JSCao
+  * @date   2018-08-25
+  */
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    int i = fileTab->count();
+    int targetIndex = 0;
+
+    for (; i > 0; i--) {
+       MyChild *target = qobject_cast<MyChild *>(fileTab->widget(targetIndex));
+       target->setClosedFlag(-1);
+       emit fileTab->tabCloseRequested(targetIndex);
+
+       while (-1 == target->closedFlag()) ;
+       if (0 == target->closedFlag()) {
+           fileTab->removeTab(targetIndex);
+           delete target;
+       } else {
+           emit subIdRestore(targetIndex);
+           targetIndex++;
+       }
+    }
+
+    if (fileTab->count() != 0) {
+        event->ignore();
+    } else {
+        event->accept();
+    }
+
+    writeSetting();
 }
 
 QWidget *MainWindow::findTagMyChild(const QString &fileName)
@@ -393,14 +553,20 @@ QWidget *MainWindow::findTagMyChild(const QString &fileName)
   */
 void MainWindow::openAssignFile(QString fileName)
 {
+    printLog(DEBUG, "start opening file %s.", (const char *)fileName.toUtf8());
+
     if (!fileName.isEmpty()) {
         QWidget *existing = findTagMyChild(fileName);
         if (existing) {
             fileTab->setCurrentWidget(existing);
+            printLog(DEBUG, "setcurrentwidget.");
             return;
         }
 
         MyChild *child = createMyChild();
+        if (!child) {
+            printLog(DEBUG, "open file failed!");
+        }
         if (child->loadFile(fileName)) {
             statusBar()->showMessage(tr("文件已打开"), 2000);
             int index = fileTab->addTab(child, child->pureCurrentFile());
@@ -414,49 +580,3 @@ void MainWindow::openAssignFile(QString fileName)
     }
 }
 
-
-void MainWindow::openFile()
-{
-    QString fileName = QFileDialog::getOpenFileName(this);
-
-    if (!fileName.isEmpty()) {
-        //QMdiSubWindow *existing = findMyChild(fileName);
-        QWidget *existing = findTagMyChild(fileName);
-        if (existing) {
-            //mdiArea->setActiveSubWindow(existing);
-            fileTab->setCurrentWidget(existing);
-            return;
-        }
-        MyChild *child = createMyChild();
-        if (child->loadFile(fileName)) {
-            statusBar()->showMessage(tr("文件已打开"), 2000);
-            int index = fileTab->addTab(child, child->pureCurrentFile());
-            fileTab->setCurrentIndex(index);
-            child->setId(index);
-            connect(fileTab, &QTabWidget::tabCloseRequested, child, &MyChild::closefile);
-            //connect(fileTab, &QTabWidget::tabCloseRequested, child, &MyChild::updateId);
-            child->show();
-        } else {
-            child->close();
-        }
-    }
-}
-
-void MainWindow::fileSave()
-{
-    if (activeMyChild() && activeMyChild()->save()) {
-        statusBar()->showMessage(tr("文件保存成功"), 2000);
-    }
-}
-
-void MainWindow::fileSaveAs()
-{
-    if (activeMyChild() && activeMyChild()->saveAs()) {
-        statusBar()->showMessage(tr("文件保存成功"), 2000);
-    }
-}
-
-void MainWindow::clearFileBit(int index)
-{
-    clearBit(fileBitIndex, index);
-}
