@@ -83,9 +83,9 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent)
     if (2 == argc) {
         openAssignFile(*(argv + 1));
     }
-    createStatusBar(statusBar());
     connect(fileTab, &QTabWidget::currentChanged, this, &MainWindow::setWinFileTitle);
     connect(fileTab, &QTabWidget::currentChanged, this, &MainWindow::textTotalCount);
+    createStatusBar(statusBar());
 
     printLog(DEBUG, "starting mainwindow success......");
 }
@@ -573,6 +573,9 @@ void MainWindow::openAssignFile(QString fileName)
             fileTab->setCurrentIndex(index);
             child->setId(index);
             connect(fileTab, &QTabWidget::tabCloseRequested, child, &MyChild::closefile);
+            bool isChanged = child->document()->isModified();
+            setWindowModified(isChanged);
+            setWindowTitle(child->currentFile() + tr("[*]"));
             child->show();
         } else {
             child->close();
