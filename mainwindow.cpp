@@ -36,7 +36,7 @@
 #pragma execution_character_set("utf-8")
 
 #define LINECOLCOUNT "Line:%d\tCol:%d\tsel(%d)\t"
-#define TOTALCOUNT "Total:%d"
+#define TOTALCOUNT " Total:%d  lines:%d "
 
 extern debug g_debug;
 
@@ -54,6 +54,8 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent)
     : QMainWindow(parent)
 {
     printLog(DEBUG, "starting mainwindow......");
+    totalCount = 0;
+    totalLines = 0;
     setWindowTitle(tr("多文档编辑器"));
 
     try {
@@ -83,10 +85,10 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent)
     if (2 == argc) {
         openAssignFile(*(argv + 1));
     }
+
+    createStatusBar(statusBar());
     connect(fileTab, &QTabWidget::currentChanged, this, &MainWindow::setWinFileTitle);
     connect(fileTab, &QTabWidget::currentChanged, this, &MainWindow::textTotalCount);
-    createStatusBar(statusBar());
-
     printLog(DEBUG, "starting mainwindow success......");
 }
 
@@ -114,11 +116,11 @@ void MainWindow::createStatusBar(QStatusBar *p_statusBar)
     lineNum = 1;
     colNum  = 1;
     selectContent = 0;
-    totalCount = 0;
+
     lineAndColCount.sprintf(LINECOLCOUNT,lineNum, colNum, selectContent);
     countLabel = new QLabel(lineAndColCount, this);
     p_statusBar->addPermanentWidget(countLabel, 0);
-    totalCountStr.sprintf(TOTALCOUNT, totalCount);
+    totalCountStr.sprintf(TOTALCOUNT, totalCount, totalLines);
     totalLabel = new QLabel(totalCountStr, this);
     p_statusBar->addPermanentWidget(totalLabel, 0);
     printLog(DEBUG, "statusBar init success.");
@@ -335,7 +337,8 @@ void MainWindow::textTotalCount(void)
         return;
     }
     totalCount = p_activeSubWin->textCursor().document()->characterCount() - 1;
-    totalCountStr.sprintf(TOTALCOUNT, totalCount);
+    totalLines = p_activeSubWin->document()->blockCount();
+    totalCountStr.sprintf(TOTALCOUNT, totalCount, totalLines);
     totalLabel->setText(totalCountStr);
 }
 /**
@@ -576,6 +579,8 @@ void MainWindow::openAssignFile(QString fileName)
             bool isChanged = child->document()->isModified();
             setWindowModified(isChanged);
             setWindowTitle(child->currentFile() + tr("[*]"));
+            totalCount = child->textCursor().document()->characterCount() - 1;
+            totalLines = child->document()->blockCount();
             child->show();
         } else {
             child->close();

@@ -71,6 +71,7 @@ private:
     int lineNum;
     int colNum;
     int selectContent;
+    int totalLines;
 
 private slots:
     void about();

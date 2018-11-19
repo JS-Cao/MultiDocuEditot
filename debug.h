@@ -9,6 +9,7 @@
 #include <QDateTime>
 #include <QTime>
 #include <QDir>
+#include <QStandardPaths>
 #include "error.h"
 
 #ifdef QT_NO_DEBUG
