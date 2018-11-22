@@ -1,4 +1,5 @@
-﻿#include "debug.h"
+﻿#include <QCoreApplication>
+#include "debug.h"
 
 #define BUF_SIZE 256
 char g_buf[BUF_SIZE] = {0};
@@ -14,10 +15,10 @@ char g_buf[BUF_SIZE] = {0};
 debug::debug(const unsigned int level)
 {
     m_level = level;
-    m_logName = "./log/" + QDateTime::currentDateTime().toString("cj's'logyyyy_MMdd_HHmmss");
+    m_logName = QCoreApplication::applicationDirPath() + "/log/" + QDateTime::currentDateTime().toString("cj's'logyyyy_MMdd_HHmmss");
 
     try {
-        m_logDir    = new QDir("./");
+        m_logDir    = new QDir(QCoreApplication::applicationDirPath());
         m_logFile   = new QFile(m_logName);
         m_logStream = new QTextStream(m_logFile);
     } catch(std::bad_alloc &memExc) {

@@ -5,12 +5,12 @@
 #include "debug.h"
 
 QTime g_time;
-debug g_debug(0xff);
+debug * g_debug = NULL;
 
 int main(int argc, char *argv[])
 {
-    printLog(DEBUG, "start application......");
     QApplication a(argc, argv);
+    g_debug = new debug(0xff);
     MainWindow w(argc, argv);
     w.show();
     return a.exec();

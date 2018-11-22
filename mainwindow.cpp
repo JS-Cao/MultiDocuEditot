@@ -38,7 +38,7 @@
 #define LINECOLCOUNT "Line:%d\tCol:%d\tsel(%d)\t"
 #define TOTALCOUNT " Total:%d  lines:%d "
 
-extern debug g_debug;
+extern debug *g_debug;
 
 /**
   * @brief 构造函数
@@ -90,6 +90,7 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent)
     connect(fileTab, &QTabWidget::currentChanged, this, &MainWindow::setWinFileTitle);
     connect(fileTab, &QTabWidget::currentChanged, this, &MainWindow::textTotalCount);
     printLog(DEBUG, "starting mainwindow success......");
+    printLog(DEBUG, "program path is: %s,app run path is: %s", (const char *)(QCoreApplication::applicationDirPath().toUtf8()), (const char *)(QDir::currentPath().toUtf8()));
 }
 
 /**
@@ -268,7 +269,9 @@ void MainWindow::updateMenus()
 void MainWindow::readSetting()
 {
     QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
-    int Dwidth = QApplication::desktop()->width();
+    printLog(DEBUG, "organizationName is %s, applicationName is %s", \
+             (const char *)QCoreApplication::organizationName().toUtf8(), (const char *)QCoreApplication::applicationName().toUtf8());
+    int Dwidth  = QApplication::desktop()->width();
     int Dheight = QApplication::desktop()->height();
     QPoint pos = settings.value("pos", QPoint(int(Dwidth * 0.2),int(Dheight * 0.1))).toPoint();
     QSize size = settings.value("size", QSize(int(Dwidth * 0.6), int(Dheight * 0.75))).toSize();

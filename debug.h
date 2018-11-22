@@ -38,16 +38,16 @@ enum DEBUG_MODE {
  *  printLog(RELEASE, "The RELEASE is starting......");
  */
 #define printLog(mode,str,...) \
-    if (g_debug.getLevel() & (mode)) {\
+    if (g_debug->getLevel() & (mode)) {\
         if (!_RELEASE) {\
             qDebug() << __FUNCTION__ << "(" << __LINE__ << ")," \
-                     << g_debug.debugPrint(str,__VA_ARGS__);\
+                     << g_debug->debugPrint(str,__VA_ARGS__);\
         } else\
         {\
-            *g_debug.getOutStream() << g_time.currentTime().toString("[hh:mm:ss(zzz)] ")\
-                                    << __FUNCTION__ << "(" << __LINE__ << ")," \
-                                    << g_debug.debugPrint(str,__VA_ARGS__) << "\n";\
-            g_debug.logFlush();\
+            *g_debug->getOutStream() << g_time.currentTime().toString("[hh:mm:ss(zzz)] ")\
+                                     << __FUNCTION__ << "(" << __LINE__ << ")," \
+                                     << g_debug->debugPrint(str,__VA_ARGS__) << "\n";\
+            g_debug->logFlush();\
         }\
     }
 

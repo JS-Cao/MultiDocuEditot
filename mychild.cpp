@@ -27,7 +27,7 @@
 
 #pragma execution_character_set("utf-8")
 
-extern debug g_debug;
+extern debug *g_debug;
 
 MyChild::MyChild()
 {
