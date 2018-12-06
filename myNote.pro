@@ -17,12 +17,14 @@ SOURCES += main.cpp\
     mychild.cpp \
     linenumberarea.cpp \
     error.cpp \
-    debug.cpp
+    debug.cpp \
+    singleapp.cpp
 
 HEADERS  += mainwindow.h \
     mychild.h \
     linenumberarea.h \
     error.h \
-    debug.h
+    debug.h \
+    singleapp.h
 
 RC_FILE = proj.rc

@@ -29,7 +29,8 @@
 
 extern debug *g_debug;
 
-MyChild::MyChild()
+MyChild::MyChild(QWidget *parent)
+    :QTextEdit(parent)
 {
     setAttribute(Qt::WA_DeleteOnClose);
     //lineNumberArea = new LineNumberArea(this);

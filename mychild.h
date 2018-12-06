@@ -15,7 +15,7 @@ class MyChild : public QTextEdit
 {
     Q_OBJECT
 public:
-    MyChild();
+    MyChild(QWidget *parent);
     ~MyChild();
     void newFile();     // 新建文件
     bool loadFile(const QString &fileName);

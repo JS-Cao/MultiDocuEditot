@@ -36,7 +36,7 @@
 #pragma execution_character_set("utf-8")
 
 #define LINECOLCOUNT "Line:%d\tCol:%d\tsel(%d)\t"
-#define TOTALCOUNT " Total:%d  lines:%d "
+#define TOTALCOUNT   " Total:%d  lines:%d "
 
 extern debug *g_debug;
 
@@ -373,7 +373,7 @@ void MainWindow::lineAndColmessage(void)
   */
 MyChild * MainWindow::createMyChild()
 {
-    MyChild * child = new MyChild;
+    MyChild * child = new MyChild(this);
     if (!child) {
         printLog(DEBUG, "create child failed!");
     }
@@ -585,6 +585,7 @@ void MainWindow::openAssignFile(QString fileName)
             totalCount = child->textCursor().document()->characterCount() - 1;
             totalLines = child->document()->blockCount();
             child->show();
+            printLog(DEBUG, "load file success.");
         } else {
             child->close();
         }

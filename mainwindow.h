@@ -35,7 +35,6 @@ private:
     MyChild *activeMyChild(void);
     QMdiSubWindow *findMyChild(const QString &fileName);
     QWidget *findTagMyChild(const QString &fileName);
-    void openAssignFile(QString fileName);
     void createStatusBar(QStatusBar *p_statusBar);
 
     /* variable */
@@ -94,6 +93,8 @@ private slots:
     void textTotalCount(void);
     void setWinFileTitle(void);
     void setTitlePostfix(bool isChanged);
+public slots:
+    void openAssignFile(QString fileName);
 signals:
     void subIdRestore(int id);
 };
