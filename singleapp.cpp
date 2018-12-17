@@ -19,6 +19,7 @@ extern debug *g_debug;
 #define SHBUFSIZE   (1024 * 4)
 
 static char *g_shareBuff = NULL;
+static bool isOver {false};
 
 /**
   * @brief 构造函数
@@ -32,19 +33,17 @@ static char *g_shareBuff = NULL;
 singleApplication::singleApplication(int argc, char *argv[])
     :QApplication(argc, argv), m_sharedMemory(QString(NOTESHKEY))
 {
-    int pos = 0, index = 0, j = 0;
-    g_shareBuff = new char[_4K];
-    char *p_temp = NULL;
+    int pos = 0, index = 0;
+    g_shareBuff  = new char[_4K];
+    char *p_temp = new char[_4K];
     char *p_tmpShareBuff = NULL;
 
-    p_temp = new char[_4K];
     // 1、extract file name from parameter
     pos = sprintf(g_shareBuff, "%d,", argc - 1);
     while (--argc > 0)
     {
         pos += sprintf(g_shareBuff + pos, "%s,", *(argv + (++index)));
     }
-
     if (m_sharedMemory.isAttached()) {
         if (!m_sharedMemory.detach()) {
             qDebug() << "unable to detach shared memory segment!";
@@ -64,19 +63,15 @@ singleApplication::singleApplication(int argc, char *argv[])
                 m_sharedMemory.lock();
                 p_tmpShareBuff = (char *)m_sharedMemory.data();
                 memcpy(p_temp, p_tmpShareBuff, m_sharedMemory.size());
-                j = 0;
-                index = 0;
-                while (*(p_temp + j) != ',') {
-                    if (!isdigit(*p_temp)) {
-                        break;
-                    }
-                    index = *(p_temp + j) - '0' + 10 * index;
-                    j++;
-                }
-                if (0 == index) {
-                    // if index = 0 that means share data has been extract
-                    memset(p_tmpShareBuff, 0, m_sharedMemory.size());
-                    memcpy(p_tmpShareBuff, g_shareBuff, pos + 1);
+                index = -1;
+                if(pos == 2) {
+                     *p_tmpShareBuff = '$';
+                     index = 0;
+                } else if ((*(p_temp + 1) == ',') && (*(p_temp + 0) == '0')) {
+                     // if index = 0 that means share data has been extract
+                     memset(p_tmpShareBuff, 0, m_sharedMemory.size());
+                     memcpy(p_tmpShareBuff, g_shareBuff, pos + 1);
+                     index = 0;
                 }
                 m_sharedMemory.unlock();
                 if (0 == index) {
@@ -112,6 +107,10 @@ singleApplication::singleApplication(int argc, char *argv[])
  {
      delete [] g_shareBuff;
      g_shareBuff = NULL;
+     isOver = true;
+     if (m_thread.get_id() != std::thread::id {}) {
+        m_thread.join();
+     }
  }
 
  /**
@@ -132,6 +131,9 @@ singleApplication::singleApplication(int argc, char *argv[])
     p_mw->connect(p_sa, &singleApplication::fileName, p_mw, &MainWindow::openAssignFile);
 
     while (1) {
+        if (isOver == true) {
+            break;
+        }
         p_sa->m_sharedMemory.lock();
         char * p_tmpShareBuff = (char *)p_sa->m_sharedMemory.data();
         int head  = 0, tail = 0, index = 0;
@@ -142,6 +144,14 @@ singleApplication::singleApplication(int argc, char *argv[])
             }
             index = *(p_tmpShareBuff + head) - '0' + 10 * index;
             head++;
+        }
+
+        if (*p_tmpShareBuff == '$') { // 激活窗口
+            p_mw->raise();
+            p_mw->activateWindow();
+            p_mw->setWindowState((p_mw->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+            p_mw->show();
+            *p_tmpShareBuff = '0';
         }
 
         if (index) {
