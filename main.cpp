@@ -19,7 +19,6 @@ int main(int argc, char *argv[])
     g_debug = new debug(0xff);
     MainWindow w(argc, argv);
     w.show();
-
     struct share_arg saAndmw;
     saAndmw.p_mw = &w;
     saAndmw.p_sa = &a;

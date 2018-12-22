@@ -58,7 +58,7 @@ singleApplication::singleApplication(int argc, char *argv[])
             }
             isRunning = true;
             int i = 0;
-            while (i < 3) {
+            while (i < 30) {
                 i++;
                 m_sharedMemory.lock();
                 p_tmpShareBuff = (char *)m_sharedMemory.data();
@@ -77,7 +77,7 @@ singleApplication::singleApplication(int argc, char *argv[])
                 if (0 == index) {
                     break;
                 }
-                QTime tarTimer = QTime::currentTime().addMSecs(100);
+                QTime tarTimer = QTime::currentTime().addMSecs(60);
                 while( QTime::currentTime() < tarTimer )
                     QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
             }
@@ -182,8 +182,8 @@ singleApplication::singleApplication(int argc, char *argv[])
         }
         p_sa->m_sharedMemory.unlock();
 
-        QTime tarTimer = QTime::currentTime().addMSecs(100);
+        QTime tarTimer = QTime::currentTime().addMSecs(30);
         while( QTime::currentTime() < tarTimer )
-            QCoreApplication::processEvents(QEventLoop::AllEvents, 20);
+            QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
     }
  }

@@ -16,6 +16,8 @@
 #include <QSignalMapper>
 #include <QList>
 #include <QString>
+#include <QStringList>
+#include <QStringListIterator>
 #include <QWidget>
 #include <QCloseEvent>
 #include <QFileDialog>
@@ -29,6 +31,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPlainTextEdit>
+#include <QVariant>
 #include "mainwindow.h"
 #include "mychild.h"
 #include "debug.h"
@@ -37,6 +40,9 @@
 
 #define LINECOLCOUNT "Line:%d\tCol:%d\tsel(%d)\t"
 #define TOTALCOUNT   " Total:%d  lines:%d "
+
+#define WINSIZE      "windowSize"
+#define NUMOFRESLAB  "NumOfResLabels"
 
 extern debug *g_debug;
 
@@ -79,18 +85,21 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent)
 
     connect(fileTab, &QTabWidget::currentChanged, this, &MainWindow::updateMenus);
 
-    readSetting();
-
-    // 如果参数个数等于2表示该程序通过某一文本文件打开，并将该文本文件路径传递给该应用
-    if (2 == argc) {
-        openAssignFile(*(argv + 1));
-    }
+    QCoreApplication::setOrganizationName("JS-Cao");
+    //QCoreApplication::setOrganizationDomain("mysoft.com");
+    QCoreApplication::setApplicationName("myNote");
 
     createStatusBar(statusBar());
     connect(fileTab, &QTabWidget::currentChanged, this, &MainWindow::setWinFileTitle);
     connect(fileTab, &QTabWidget::currentChanged, this, &MainWindow::textTotalCount);
     printLog(DEBUG, "starting mainwindow success......");
     printLog(DEBUG, "program path is: %s,app run path is: %s", (const char *)(QCoreApplication::applicationDirPath().toUtf8()), (const char *)(QDir::currentPath().toUtf8()));
+    readSetting();
+
+    // 如果参数个数等于2表示该程序通过某一文本文件打开，并将该文本文件路径传递给该应用
+    if (2 == argc) {
+        openAssignFile(*(argv + 1));
+    }
 }
 
 /**
@@ -268,15 +277,38 @@ void MainWindow::updateMenus()
   */
 void MainWindow::readSetting()
 {
-    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    QSettings settings;
     printLog(DEBUG, "organizationName is %s, applicationName is %s", \
              (const char *)QCoreApplication::organizationName().toUtf8(), (const char *)QCoreApplication::applicationName().toUtf8());
     int Dwidth  = QApplication::desktop()->width();
     int Dheight = QApplication::desktop()->height();
+
     QPoint pos = settings.value("pos", QPoint(int(Dwidth * 0.2),int(Dheight * 0.1))).toPoint();
     QSize size = settings.value("size", QSize(int(Dwidth * 0.6), int(Dheight * 0.75))).toSize();
+
+    // read window size
+    settings.beginGroup(WINSIZE);
+    if (settings.contains("pos") && settings.contains("size")) {
+        pos = settings.value("pos").toPoint();
+        size = settings.value("size").toSize();
+    }
     move(pos);
     resize(size);
+    settings.endGroup();
+
+    // read label of numbers and unclosed file's name
+    settings.beginGroup(NUMOFRESLAB);
+    int count = settings.value("labelofnumber").toInt();
+    if (count != 0) {
+        QStringList fileList = settings.value("fileNameList").toStringList();
+        QStringList::const_iterator constIterator;
+            for (constIterator = fileList.constBegin(); constIterator != fileList.constEnd(); ++constIterator) {
+                printLog(DEBUG, (*constIterator).toLocal8Bit().constData());
+                openAssignFile((*constIterator).toLocal8Bit().constData());
+            }
+    }
+    settings.endGroup();
+
     printLog(DEBUG, "read configuration finish.");
 }
 
@@ -289,9 +321,26 @@ void MainWindow::readSetting()
   */
 void MainWindow::writeSetting()
 {
-    QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
-    settings.setValue("pos", pos());
-    settings.setValue("size", size());
+    int tabCount = fileTab->count() - 1;
+    printLog(DEBUG, "tabCount is %d", tabCount + 1);
+    QStringList fileList;
+    for (; tabCount >= 0; tabCount--) {
+       MyChild *target = qobject_cast<MyChild *>(fileTab->widget(tabCount));
+       printLog(DEBUG, "tabCount is %d, %s", tabCount, (const char *)(target->currentFile().toUtf8()));
+       fileList += target->currentFile();
+    }
+    QSettings settings;
+    // store window size
+    settings.beginGroup(WINSIZE);
+    settings.setValue("pos", QVariant(pos()));
+    settings.setValue("size", QVariant(size()));
+    settings.endGroup();
+
+    // store label of numbers and unclosed file's name
+    settings.beginGroup(NUMOFRESLAB);
+    settings.setValue("labelofnumber", QVariant(tabCount));
+    settings.setValue("fileNameList", QVariant(fileList));
+    settings.endGroup();
 }
 
 
@@ -511,6 +560,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
     int i = fileTab->count();
     int targetIndex = 0;
 
+    writeSetting();
+
     for (; i > 0; i--) {
        MyChild *target = qobject_cast<MyChild *>(fileTab->widget(targetIndex));
        target->setClosedFlag(-1);
@@ -531,8 +582,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
     } else {
         event->accept();
     }
-
-    writeSetting();
 }
 
 QWidget *MainWindow::findTagMyChild(const QString &fileName)
