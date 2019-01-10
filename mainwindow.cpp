@@ -98,7 +98,7 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent)
 
     // 如果参数个数等于2表示该程序通过某一文本文件打开，并将该文本文件路径传递给该应用
     if (2 == argc) {
-        openAssignFile(*(argv + 1));
+        openAssignFile(QString::fromLocal8Bit(*(argv + 1)));
     }
 }
 
@@ -304,7 +304,7 @@ void MainWindow::readSetting()
         QStringList::const_iterator constIterator;
             for (constIterator = fileList.constBegin(); constIterator != fileList.constEnd(); ++constIterator) {
                 printLog(DEBUG, (*constIterator).toLocal8Bit().constData());
-                openAssignFile((*constIterator).toLocal8Bit().constData());
+                openAssignFile(*constIterator);
             }
     }
     settings.endGroup();
@@ -313,7 +313,7 @@ void MainWindow::readSetting()
 }
 
 /**
-  * @brief 写入配置以供下回程序启动时读取（待完善）
+  * @brief 写入配置以供下回程序启动时读取
   * @param
   * @return none
   * @auther JSCao

@@ -124,7 +124,7 @@ void MyChild::closeEvent(QCloseEvent *event)
 
 bool MyChild::loadFile(const QString &fileName)
 {
-    printLog(DEBUG, "loadFile %s.", (const char *)fileName.toUtf8());
+    printLog(DEBUG, "loadFile %s.", (const char *)fileName.toLocal8Bit());
     if (!fileName.isEmpty()) {
         QFile file(fileName);
         if (!file.open(QFile::ReadOnly | QFile::Text)) {
