@@ -56,6 +56,7 @@ private:
     QAction *ppasteAct;
 
     QMenu *pwindowMenu;
+    QSignalMapper *pwinMapper;
 
     QAction *pseparatorAct;
 
@@ -80,6 +81,7 @@ private slots:
     void fileSaveAs();
 
     void updateMenus();
+    void updateWinMenus();
     MyChild *createMyChild();
 
     void undo();
@@ -93,6 +95,7 @@ private slots:
     void textTotalCount(void);
     void setWinFileTitle(void);
     void setTitlePostfix(bool isChanged);
+    void setActiveTab(const int &index);
 public slots:
     void openAssignFile(QString fileName);
 signals:

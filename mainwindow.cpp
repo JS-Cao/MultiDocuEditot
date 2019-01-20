@@ -32,6 +32,7 @@
 #include <QLineEdit>
 #include <QPlainTextEdit>
 #include <QVariant>
+#include <QSignalMapper>
 #include "mainwindow.h"
 #include "mychild.h"
 #include "debug.h"
@@ -66,6 +67,8 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent)
 
     try {
         fileTab = new QTabWidget(this);
+        pwinMapper = new QSignalMapper(this);
+        connect(pwinMapper, SIGNAL(mapped(int)), this, SLOT(setActiveTab(int)));
         // create menubar
         createActions();
     }
@@ -213,6 +216,8 @@ void MainWindow::createActions(void)
 
     // window menu
     pwindowMenu = menuBar()->addMenu(tr("窗口(&W)"));
+    updateWinMenus();
+    connect(pwindowMenu, &QMenu::aboutToShow, this, &MainWindow::updateWinMenus);
 
     // 帮助菜单
     paboutMenu = menuBar()->addMenu(tr("帮助(&H)"));
@@ -239,6 +244,21 @@ MyChild *MainWindow::activeMyChild()
     }
 
     return NULL;
+}
+
+/**
+  * @brief 设置活跃子窗口
+  * @param 活跃子窗口Tab索引
+  * @return none
+  * @auther JSCao
+  * @date   2019-01-20
+  */
+void MainWindow::setActiveTab(const int &index)
+{
+    if (fileTab->count() < index) {
+        return;
+    }
+    fileTab->setCurrentIndex(index);
 }
 
 /**
@@ -346,6 +366,32 @@ void MainWindow::writeSetting()
 
 /****************************** Place slot functiong in here ***************************************/
 
+
+/**
+  * @brief 【slot】设置窗口标题后缀
+  * @param  none
+  * @return none
+  * @auther JSCao
+  * @date   2018-11-18
+  */
+void MainWindow::updateWinMenus(void)
+{
+    // clear windows
+    pwindowMenu->clear();
+    // traverse all tabs
+    for (int i = 0; i < fileTab->count(); i++) {
+        MyChild *myChild = qobject_cast<MyChild *>(fileTab->widget(i));
+        QString subName = tr("&%1 %2").arg(i + 1).arg(myChild->pureCurrentFile());
+        // add action to menu
+        QAction *subWinAct = pwindowMenu->addAction(subName);
+        subWinAct->setCheckable(true);
+        subWinAct->setChecked(myChild == activeMyChild());
+        //connect(subWinAct, &QAction::triggered, pwinMapper, &QSignalMapper::map);
+        connect(subWinAct, SIGNAL(triggered()), pwinMapper, SLOT(map()));
+        pwinMapper->setMapping(subWinAct, i);
+    }
+}
+
 /**
   * @brief 【slot】设置窗口标题后缀
   * @param  none
@@ -357,6 +403,7 @@ void MainWindow::setTitlePostfix(bool isChanged)
 {
     setWindowModified(isChanged);
 }
+
 /**
   * @brief 【slot】设置窗口标题
   * @param  none
@@ -393,6 +440,7 @@ void MainWindow::textTotalCount(void)
     totalCountStr.sprintf(TOTALCOUNT, totalCount, totalLines);
     totalLabel->setText(totalCountStr);
 }
+
 /**
   * @brief 【slot】更新状态栏信息
   * @param  none
@@ -413,6 +461,7 @@ void MainWindow::lineAndColmessage(void)
     lineAndColCount.sprintf(LINECOLCOUNT,lineNum, colNum, selectContent);
     countLabel->setText(lineAndColCount);
 }
+
 /**
   * @brief 【slot】创建新的子窗口
   * @param  none
