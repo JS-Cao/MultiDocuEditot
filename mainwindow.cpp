@@ -95,6 +95,7 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent)
     createStatusBar(statusBar());
     connect(fileTab, &QTabWidget::currentChanged, this, &MainWindow::setWinFileTitle);
     connect(fileTab, &QTabWidget::currentChanged, this, &MainWindow::textTotalCount);
+    connect(fileTab, &QTabWidget::currentChanged, this, &MainWindow::lineAndColmessage);
     printLog(DEBUG, "starting mainwindow success......");
     printLog(DEBUG, "program path is: %s,app run path is: %s", (const char *)(QCoreApplication::applicationDirPath().toUtf8()), (const char *)(QDir::currentPath().toUtf8()));
     readSetting();
@@ -386,7 +387,6 @@ void MainWindow::updateWinMenus(void)
         QAction *subWinAct = pwindowMenu->addAction(subName);
         subWinAct->setCheckable(true);
         subWinAct->setChecked(myChild == activeMyChild());
-        //connect(subWinAct, &QAction::triggered, pwinMapper, &QSignalMapper::map);
         connect(subWinAct, SIGNAL(triggered()), pwinMapper, SLOT(map()));
         pwinMapper->setMapping(subWinAct, i);
     }
