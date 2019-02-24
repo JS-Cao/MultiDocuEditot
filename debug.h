@@ -1,5 +1,5 @@
-﻿#ifndef _DEBUG_H_
-#define _DEBUG_H_
+﻿#ifndef DEBUG_H_
+#define DEBUG_H_
 
 #include <QFile>
 #include <QString>
@@ -10,15 +10,15 @@
 #include <QTime>
 #include <QDir>
 #include <QStandardPaths>
-#include "error.h"
 
 #ifdef QT_NO_DEBUG
-#define _RELEASE 1
+#define RELEASE_ 1
 #else
-#define _RELEASE 0
+#define RELEASE_ 0
 #endif
-
+class debug;
 extern QTime g_time;
+extern debug * g_debug;
 
 enum DEBUG_MODE {
     DEBUG   = 0x01 << 0,
@@ -39,14 +39,14 @@ enum DEBUG_MODE {
  */
 #define printLog(mode,str,...) \
     if (g_debug->getLevel() & (mode)) {\
-        if (!_RELEASE) {\
+        if (!RELEASE_) {\
             qDebug() << __FUNCTION__ << "(" << __LINE__ << ")," \
-                     << g_debug->debugPrint(str,__VA_ARGS__);\
+                     << g_debug->debugPrint(str,##__VA_ARGS__);\
         } else\
         {\
             *g_debug->getOutStream() << g_time.currentTime().toString("[hh:mm:ss(zzz)] ")\
                                      << __FUNCTION__ << "(" << __LINE__ << ")," \
-                                     << g_debug->debugPrint(str,__VA_ARGS__) << "\n";\
+                                     << g_debug->debugPrint(str,##__VA_ARGS__) << "\n";\
             g_debug->logFlush();\
         }\
     }
@@ -62,7 +62,7 @@ public:
     {
         m_level = level;
     }
-    int getLevel(void) { return m_level; }
+    unsigned int getLevel(void) { return m_level; }
     QTextStream *getOutStream(void) {return m_logStream; }
     const char* debugPrint(const char *,...);
     void logFlush(void);

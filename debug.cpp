@@ -2,7 +2,9 @@
 #include "debug.h"
 
 #define BUF_SIZE 256
-char g_buf[BUF_SIZE] = {0};
+static char g_buf[BUF_SIZE] = {0};
+debug * g_debug = nullptr;
+QTime g_time;
 
 /**
   * @brief 构造函数
@@ -61,12 +63,20 @@ void debug::logFlush(void)
 * @auther JSCao
 * @date   2018-10-28
 */
+#ifdef linux
+__attribute__((__format__ (__printf__, 2, 0)))
+#endif
 const char* debug::debugPrint(const char *str, ...)
 {
     memset(g_buf, 0, BUF_SIZE);
     va_list va;
     va_start(va, str);
+#ifdef WIN32
     vsprintf_s(g_buf, BUF_SIZE, str, va);
+#endif
+#ifdef linux
+    vsprintf(g_buf, str, va);
+#endif
     va_end(va);
 
     return g_buf;

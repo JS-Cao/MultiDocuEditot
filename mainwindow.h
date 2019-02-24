@@ -1,4 +1,4 @@
-﻿#ifndef MAINWINDOW_H
+#ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
 #include <QMainWindow>
@@ -21,8 +21,8 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 public:
-    MainWindow(int argc, char *argv[], QWidget *parent = 0);
-    ~MainWindow();
+    MainWindow(int argc, char *argv[], QWidget *parent = nullptr);
+    ~MainWindow() override;
 
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
@@ -95,7 +95,7 @@ private slots:
     void textTotalCount(void);
     void setWinFileTitle(void);
     void setTitlePostfix(bool isChanged);
-    void setActiveTab(const int &index);
+    void setActiveTab(const int index);
 public slots:
     void openAssignFile(QString fileName);
 signals:

@@ -1,17 +1,11 @@
-﻿#include <iostream>
-#include <QApplication>
-#include <QTime>
-#include "singleapp.h"
+#include <iostream>
 #include "mainwindow.h"
+#include "singleapplication.h"
 #include "debug.h"
-
-QTime g_time;
-debug * g_debug = NULL;
 
 int main(int argc, char *argv[])
 {
     singleApplication a(argc, argv);
-
     if (a.appIsRunning() == true) {
         return 0;
     }
@@ -22,7 +16,8 @@ int main(int argc, char *argv[])
     struct share_arg saAndmw;
     saAndmw.p_mw = &w;
     saAndmw.p_sa = &a;
-    a.m_thread = std::thread{fetchSharemem, (void *)&saAndmw};
+    void * ptr = reinterpret_cast<void *>(&saAndmw);
+    a.m_thread = std::thread{fetchSharemem, ptr};
 
     return a.exec();
 }

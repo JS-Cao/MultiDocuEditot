@@ -23,7 +23,7 @@ public:
     bool saveAs();
     bool saveFile(const QString &fileName);
     void setId(const int Id);
-    const int fileId(void);
+    int fileId(void);
 
     void setClosedFlag(int flag);
     int closedFlag(void);

@@ -1,4 +1,4 @@
-﻿#include <cstdio>
+#include <cstdio>
 #include <QMenu>
 #include <QMenuBar>
 #include <QAction>
@@ -32,20 +32,19 @@
 #include <QLineEdit>
 #include <QPlainTextEdit>
 #include <QVariant>
-#include <QSignalMapper>
 #include "mainwindow.h"
 #include "mychild.h"
 #include "debug.h"
 
+#ifdef WIN32
 #pragma execution_character_set("utf-8")
+#endif
 
 #define LINECOLCOUNT "Line:%d\tCol:%d\tsel(%d)\t"
 #define TOTALCOUNT   " Total:%d  lines:%d "
 
 #define WINSIZE      "windowSize"
 #define NUMOFRESLAB  "NumOfResLabels"
-
-extern debug *g_debug;
 
 /**
   * @brief 构造函数
@@ -67,8 +66,6 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent)
 
     try {
         fileTab = new QTabWidget(this);
-        pwinMapper = new QSignalMapper(this);
-        connect(pwinMapper, SIGNAL(mapped(int)), this, SLOT(setActiveTab(int)));
         // create menubar
         createActions();
     }
@@ -97,7 +94,7 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent)
     connect(fileTab, &QTabWidget::currentChanged, this, &MainWindow::textTotalCount);
     connect(fileTab, &QTabWidget::currentChanged, this, &MainWindow::lineAndColmessage);
     printLog(DEBUG, "starting mainwindow success......");
-    printLog(DEBUG, "program path is: %s,app run path is: %s", (const char *)(QCoreApplication::applicationDirPath().toUtf8()), (const char *)(QDir::currentPath().toUtf8()));
+    printLog(DEBUG, "program path is: %s,app run path is: %s", static_cast<const char *>(QCoreApplication::applicationDirPath().toUtf8()), static_cast<const char *>(QDir::currentPath().toUtf8()));
     readSetting();
 
     // 如果参数个数等于2表示该程序通过某一文本文件打开，并将该文本文件路径传递给该应用
@@ -244,7 +241,7 @@ MyChild *MainWindow::activeMyChild()
         return qobject_cast<MyChild *>(activeSubWindow);
     }
 
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -254,7 +251,7 @@ MyChild *MainWindow::activeMyChild()
   * @auther JSCao
   * @date   2019-01-20
   */
-void MainWindow::setActiveTab(const int &index)
+void MainWindow::setActiveTab(const int index)
 {
     if (fileTab->count() < index) {
         return;
@@ -272,7 +269,7 @@ void MainWindow::setActiveTab(const int &index)
 void MainWindow::updateMenus()
 {
     MyChild *p_activeSubWin = activeMyChild();
-    bool hasMyChild = (p_activeSubWin != NULL);
+    bool hasMyChild = (p_activeSubWin != nullptr);
 
     psaveAct->setEnabled(hasMyChild);
     psaveAsAct->setEnabled(hasMyChild);
@@ -300,7 +297,7 @@ void MainWindow::readSetting()
 {
     QSettings settings;
     printLog(DEBUG, "organizationName is %s, applicationName is %s", \
-             (const char *)QCoreApplication::organizationName().toUtf8(), (const char *)QCoreApplication::applicationName().toUtf8());
+             static_cast<const char *>(QCoreApplication::organizationName().toUtf8()), static_cast<const char *>(QCoreApplication::applicationName().toUtf8()));
     int Dwidth  = QApplication::desktop()->width();
     int Dheight = QApplication::desktop()->height();
 
@@ -347,7 +344,7 @@ void MainWindow::writeSetting()
     QStringList fileList;
     for (; tabCount >= 0; tabCount--) {
        MyChild *target = qobject_cast<MyChild *>(fileTab->widget(tabCount));
-       printLog(DEBUG, "tabCount is %d, %s", tabCount, (const char *)(target->currentFile().toUtf8()));
+       printLog(DEBUG, "tabCount is %d, %s", tabCount, static_cast<const char *>(target->currentFile().toUtf8()));
        fileList += target->currentFile();
     }
     QSettings settings;
@@ -387,8 +384,7 @@ void MainWindow::updateWinMenus(void)
         QAction *subWinAct = pwindowMenu->addAction(subName);
         subWinAct->setCheckable(true);
         subWinAct->setChecked(myChild == activeMyChild());
-        connect(subWinAct, SIGNAL(triggered()), pwinMapper, SLOT(map()));
-        pwinMapper->setMapping(subWinAct, i);
+        connect(subWinAct, &QAction::triggered, [i, this](){setActiveTab(i);} );
     }
 }
 
@@ -636,7 +632,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 QWidget *MainWindow::findTagMyChild(const QString &fileName)
 {
     QString canonicalFilePath = QFileInfo(fileName).canonicalFilePath();
-    QWidget *tagSubWindow = NULL;
+    QWidget *tagSubWindow = nullptr;
     for (int i = 0; i < fileTab->count(); i++) {
         tagSubWindow = fileTab->widget(i);
         MyChild *myChild = qobject_cast<MyChild *>(tagSubWindow);
@@ -644,7 +640,7 @@ QWidget *MainWindow::findTagMyChild(const QString &fileName)
             return tagSubWindow;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 /**
@@ -657,7 +653,7 @@ QWidget *MainWindow::findTagMyChild(const QString &fileName)
   */
 void MainWindow::openAssignFile(QString fileName)
 {
-    printLog(DEBUG, "start opening file %s.", (const char *)fileName.toUtf8());
+    printLog(DEBUG, "start opening file %s.", static_cast<const char *>(fileName.toUtf8()));
 
     if (!fileName.isEmpty()) {
         QWidget *existing = findTagMyChild(fileName);
@@ -689,4 +685,3 @@ void MainWindow::openAssignFile(QString fileName)
         }
     }
 }
-

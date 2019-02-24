@@ -21,13 +21,12 @@
 #include <QAbstractTextDocumentLayout>
 #include <QPlainTextEdit>
 #include <QtWidgets>
-#include "linenumberarea.h"
 #include "mainwindow.h"
 #include "debug.h"
 
+#ifdef WIN32
 #pragma execution_character_set("utf-8")
-
-extern debug *g_debug;
+#endif
 
 MyChild::MyChild(QWidget *parent)
     :QTextEdit(parent)
@@ -124,7 +123,7 @@ void MyChild::closeEvent(QCloseEvent *event)
 
 bool MyChild::loadFile(const QString &fileName)
 {
-    printLog(DEBUG, "loadFile %s.", (const char *)fileName.toLocal8Bit());
+    printLog(DEBUG, "loadFile %s.", static_cast<const char *>(fileName.toLocal8Bit()));
     if (!fileName.isEmpty()) {
         QFile file(fileName);
         if (!file.open(QFile::ReadOnly | QFile::Text)) {
@@ -232,7 +231,7 @@ void MyChild::setId(const int Id)
     myId = Id;
 }
 
-const int MyChild::fileId(void)
+int MyChild::fileId(void)
 {
     return myId;
 }
@@ -328,9 +327,9 @@ void MyChild::lineNumberAreaPaintEvent(QPaintEvent *event)
 
     QTextBlock block = document()->firstBlock();
 
-    blockNumsPerPage = frameGeometry().bottom() / document()->documentLayout()->blockBoundingRect(block).height();
+    blockNumsPerPage = static_cast<int>(frameGeometry().bottom() / document()->documentLayout()->blockBoundingRect(block).height());
 
-    if ((scrollToBlockNum != -1) && (scrollToBlockStep != -1)) {
+    if ((scrollToBlockNum != -1) && (scrollToBlockStep > -1)) {
         block = document()->findBlockByLineNumber(scrollToBlockNum);
         if (block.isValid()) {
             _blockNumber = block.blockNumber() + 1;
@@ -338,8 +337,8 @@ void MyChild::lineNumberAreaPaintEvent(QPaintEvent *event)
         //qDebug() << "Line start is :" << _blockNumber;
     }
 
-    int top = (int)document()->documentLayout()->blockBoundingRect(document()->firstBlock()).topLeft().ry();
-    int bottom = top + (int)document()->documentLayout()->blockBoundingRect(document()->firstBlock()).height();
+    int top = static_cast<int>(document()->documentLayout()->blockBoundingRect(document()->firstBlock()).topLeft().ry());
+    int bottom = static_cast<int>(top + document()->documentLayout()->blockBoundingRect(document()->firstBlock()).height());
 
     while (block.isValid() && top <= event->rect().bottom()) {
         if (block.isVisible() && bottom >= event->rect().top()) {
@@ -350,7 +349,7 @@ void MyChild::lineNumberAreaPaintEvent(QPaintEvent *event)
 
         block = block.next();
         top = bottom;
-        bottom = top + (int)document()->documentLayout()->blockBoundingRect(block).height();
+        bottom = static_cast<int>(top + document()->documentLayout()->blockBoundingRect(block).height());
         ++_blockNumber;
     }
 
@@ -389,7 +388,7 @@ void MyChild::scrollMapToBlock(int, int max)
 void MyChild::FirstVisibleBlockNum(int index)
 {
     if (scrollToBlockStep > 0) {
-        scrollToBlockNum = index * scrollToBlockStep;
+        scrollToBlockNum = static_cast<int>(index * scrollToBlockStep);
     }
 }
 
