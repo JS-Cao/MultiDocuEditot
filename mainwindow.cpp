@@ -96,11 +96,6 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent)
     printLog(DEBUG, "starting mainwindow success......");
     printLog(DEBUG, "program path is: %s,app run path is: %s", static_cast<const char *>(QCoreApplication::applicationDirPath().toUtf8()), static_cast<const char *>(QDir::currentPath().toUtf8()));
     readSetting();
-
-    // 如果参数个数等于2表示该程序通过某一文本文件打开，并将该文本文件路径传递给该应用
-    if (2 == argc) {
-        openAssignFile(QString::fromLocal8Bit(*(argv + 1)));
-    }
 }
 
 /**

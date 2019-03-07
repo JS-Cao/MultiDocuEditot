@@ -98,8 +98,6 @@ singleApplication::singleApplication(int & argc, char *argv[])
         }
     } else {   
         m_sharedMemory.lock();
-        *g_shareBuff = '0';
-        *(g_shareBuff + 1) = ',';
         char *to = reinterpret_cast<char *>(m_sharedMemory.data());
         memcpy(to, g_shareBuff, static_cast<size_t>(pos + 1));
         m_sharedMemory.unlock();
