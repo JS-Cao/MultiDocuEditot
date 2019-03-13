@@ -56,7 +56,7 @@
   * @auther JSCao
   * @date   2018-08-25
   */
-MainWindow::MainWindow(int argc, char *argv[], QWidget *parent)
+MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     printLog(DEBUG, "starting mainwindow......");
@@ -474,6 +474,7 @@ MyChild * MainWindow::createMyChild()
     connect(child, &MyChild::undoAvailable, this, &MainWindow::setTitlePostfix);
     connect(child, &MyChild::selectionChanged, this, &MainWindow::lineAndColmessage);
     connect(child, &MyChild::textChanged, this, &MainWindow::textTotalCount);
+    connect(child, &MyChild::textChanged, this, &MainWindow::setWinFileTitle);
     connect(child, &MyChild::cursorPositionChanged, this, &MainWindow::lineAndColmessage);
 
     return child;
@@ -576,6 +577,7 @@ void MainWindow::fileSave()
 {
     if (activeMyChild() && activeMyChild()->save()) {
         statusBar()->showMessage(tr("文件保存成功"), 2000);
+        setWinFileTitle();
     }
 }
 

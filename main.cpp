@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 #include "mainwindow.h"
 #include "singleapplication.h"
 #include "debug.h"
@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
     }
 
     g_debug = new debug(0xff);
-    MainWindow w(argc, argv);
+    MainWindow w;
     w.show();
     struct share_arg saAndmw;
     saAndmw.p_mw = &w;
