@@ -183,7 +183,7 @@ singleApplication::singleApplication(int & argc, char *argv[])
                 memcpy(str, p_tmpShareBuff + head + 1, static_cast<size_t>(tail - head - 2));
                 *(str + tail - head - 2) = 0;
                 head = tail - 1;
-                emit p_sa->fileName(str);
+                emit p_sa->fileName(QString::fromLocal8Bit(str));
             }
 
             *p_tmpShareBuff = '0';
