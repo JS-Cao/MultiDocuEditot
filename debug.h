@@ -2,10 +2,13 @@
 #define DEBUG_H_
 
 #include <QFile>
+#include <QFileInfo>
+#include <QFileInfoList>
 #include <QString>
 #include <QDebug>
 #include <QtDebug>
 #include <QTextStream>
+#include <QDate>
 #include <QDateTime>
 #include <QTime>
 #include <QDir>
@@ -66,6 +69,7 @@ public:
     QTextStream *getOutStream(void) {return m_logStream; }
     const char* debugPrint(const char *,...);
     void logFlush(void);
+    void clearLogFile(int numDaysAgo = 30);
 
 private:
     unsigned int m_level;    // debug level

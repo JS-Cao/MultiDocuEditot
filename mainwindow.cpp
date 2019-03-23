@@ -35,6 +35,7 @@
 #include "mainwindow.h"
 #include "mychild.h"
 #include "debug.h"
+#include "common.h"
 
 #ifdef WIN32
 #pragma execution_character_set("utf-8")
@@ -94,7 +95,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(fileTab, &QTabWidget::currentChanged, this, &MainWindow::textTotalCount);
     connect(fileTab, &QTabWidget::currentChanged, this, &MainWindow::lineAndColmessage);
     printLog(DEBUG, "starting mainwindow success......");
-    printLog(DEBUG, "program path is: %s,app run path is: %s", static_cast<const char *>(QCoreApplication::applicationDirPath().toUtf8()), static_cast<const char *>(QDir::currentPath().toUtf8()));
+    printLog(DEBUG, "program path is: %s,app run path is: %s", narrow_cast<const char *>(QCoreApplication::applicationDirPath().toUtf8()), narrow_cast<const char *>(QDir::currentPath().toUtf8()));
     readSetting();
 }
 
@@ -292,7 +293,7 @@ void MainWindow::readSetting()
 {
     QSettings settings;
     printLog(DEBUG, "organizationName is %s, applicationName is %s", \
-             static_cast<const char *>(QCoreApplication::organizationName().toUtf8()), static_cast<const char *>(QCoreApplication::applicationName().toUtf8()));
+             narrow_cast<const char *>(QCoreApplication::organizationName().toUtf8()), narrow_cast<const char *>(QCoreApplication::applicationName().toUtf8()));
     int Dwidth  = QApplication::desktop()->width();
     int Dheight = QApplication::desktop()->height();
 

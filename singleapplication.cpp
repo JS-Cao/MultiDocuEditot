@@ -9,6 +9,7 @@
 #include "singleapplication.h"
 #include "mainwindow.h"
 #include "debug.h"
+#include "common.h"
 
 #ifdef WIN32
 #pragma execution_character_set("utf-8")
@@ -71,16 +72,16 @@ singleApplication::singleApplication(int & argc, char *argv[])
                 i++;
                 m_sharedMemory.lock();
 
-                p_tmpShareBuff = reinterpret_cast<char *>(m_sharedMemory.data());
-                memcpy(p_temp, p_tmpShareBuff, static_cast<size_t>(m_sharedMemory.size()));
+                p_tmpShareBuff = narrow_cast<char *>(m_sharedMemory.data());
+                memcpy(p_temp, p_tmpShareBuff, narrow_cast<size_t>(m_sharedMemory.size()));
                 index = -1;
                 if(pos == 2) {
                      *p_tmpShareBuff = '$';
                      index = 0;
                 } else if ((*(p_temp + 1) == ',') && (*(p_temp + 0) == '0')) {
                      // if index = 0 that means share data has been extract
-                     memset(p_tmpShareBuff, 0, static_cast<size_t>(m_sharedMemory.size()));
-                     memcpy(p_tmpShareBuff, g_shareBuff, static_cast<size_t>(pos + 1));
+                     memset(p_tmpShareBuff, 0, narrow_cast<size_t>(m_sharedMemory.size()));
+                     memcpy(p_tmpShareBuff, g_shareBuff, narrow_cast<size_t>(pos + 1));
                      index = 0;
                 }
                 m_sharedMemory.unlock();
@@ -98,8 +99,8 @@ singleApplication::singleApplication(int & argc, char *argv[])
         }
     } else {   
         m_sharedMemory.lock();
-        char *to = reinterpret_cast<char *>(m_sharedMemory.data());
-        memcpy(to, g_shareBuff, static_cast<size_t>(pos + 1));
+        char *to = narrow_cast<char *>(m_sharedMemory.data());
+        memcpy(to, g_shareBuff, narrow_cast<size_t>(pos + 1));
         m_sharedMemory.unlock();
     }
 }
@@ -119,6 +120,7 @@ singleApplication::singleApplication(int & argc, char *argv[])
      if (m_thread.get_id() != std::thread::id {}) {
         m_thread.join();
      }
+     delete g_debug;
  }
 
  /**
@@ -130,7 +132,7 @@ singleApplication::singleApplication(int & argc, char *argv[])
    */
  void fetchSharemem(void *mw)
  {
-    struct share_arg *p_arg = reinterpret_cast<struct share_arg *>(mw);
+    struct share_arg *p_arg = narrow_cast<struct share_arg *>(mw);
     class singleApplication * p_sa = p_arg->p_sa;
     class MainWindow *p_mw = p_arg->p_mw;
 
@@ -144,7 +146,7 @@ singleApplication::singleApplication(int & argc, char *argv[])
         }
 
         p_sa->m_sharedMemory.lock();
-        char * p_tmpShareBuff = reinterpret_cast<char *>(p_sa->m_sharedMemory.data());
+        char * p_tmpShareBuff = narrow_cast<char *>(p_sa->m_sharedMemory.data());
         int head  = 0, tail = 0, index = 0;
 
         while (*(p_tmpShareBuff + head) != ',') {
@@ -180,7 +182,7 @@ singleApplication::singleApplication(int & argc, char *argv[])
                 tail = head + 1;
                 while (*(p_tmpShareBuff + tail++) != ',')
                     ;
-                memcpy(str, p_tmpShareBuff + head + 1, static_cast<size_t>(tail - head - 2));
+                memcpy(str, p_tmpShareBuff + head + 1, narrow_cast<size_t>(tail - head - 2));
                 *(str + tail - head - 2) = 0;
                 head = tail - 1;
                 emit p_sa->fileName(QString::fromLocal8Bit(str));

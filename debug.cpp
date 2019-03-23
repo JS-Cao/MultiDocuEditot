@@ -44,6 +44,7 @@ debug::debug(const unsigned int level)
 */
 debug::~debug(void)
 {
+    clearLogFile();
     m_logFile->close();
     delete m_logStream;
     delete m_logFile;
@@ -54,6 +55,56 @@ void debug::logFlush(void)
 {
     m_logStream->flush();
 }
+
+/**
+* @brief 清理日志文件函数
+* @param
+*   arg1：清理几天前的日志文件，0代表全部清理
+* @return none
+* @auther JSCao
+* @date   2019-3-23
+*/
+void debug::clearLogFile(int numDaysAgo)
+{
+    bool starClear = false;
+    qint32 currentYears = QDate::currentDate().year(), currentDays = QDate::currentDate().dayOfYear();
+    qint32 days = 0;
+
+    printLog(INFO, "start clear logs before %d days.", numDaysAgo);
+    if (numDaysAgo >= 366) {
+        printLog(ERR, "The days(%d) is out of range.", numDaysAgo);
+    }
+
+    m_logDir->cd(QString("log"));
+    QFileInfoList logFileList = m_logDir->entryInfoList(QDir::Files, QDir::Time);
+    QFileInfoList::const_iterator logFileIt;
+
+    for (logFileIt = logFileList.begin(); logFileIt != logFileList.end(); ++logFileIt) {
+        if (false == starClear) {
+            QDate dateTmp = logFileIt->birthTime().date();
+            if ((currentYears == dateTmp.year()) &&
+                (dateTmp.daysTo(QDate::currentDate()) >= numDaysAgo)) {
+                    starClear = true;
+                    m_logDir->remove(logFileIt->canonicalFilePath());
+            }
+            else if (currentYears != dateTmp.year()) {
+                if (dateTmp.isLeapYear(dateTmp.year())) {
+                    days = 366 - dateTmp.dayOfYear() + currentDays;
+                }
+                else {
+                    days = 365 - dateTmp.dayOfYear() + currentDays;
+                }
+                if (days >= numDaysAgo)
+                    starClear = true;
+            }
+        }
+        else {
+            m_logDir->remove(logFileIt->canonicalFilePath());
+            printLog(INFO, "remove file %s.", logFileIt->canonicalFilePath().toLocal8Bit());
+        }
+    }
+}
+
 
 /**
 * @brief 打印函数

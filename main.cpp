@@ -2,6 +2,7 @@
 #include "mainwindow.h"
 #include "singleapplication.h"
 #include "debug.h"
+#include "common.h"
 
 int main(int argc, char *argv[])
 {
@@ -16,7 +17,7 @@ int main(int argc, char *argv[])
     struct share_arg saAndmw;
     saAndmw.p_mw = &w;
     saAndmw.p_sa = &a;
-    void * ptr = reinterpret_cast<void *>(&saAndmw);
+    void * ptr = narrow_cast<void *>(&saAndmw);
     a.m_thread = std::thread{fetchSharemem, ptr};
 
     return a.exec();

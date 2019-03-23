@@ -23,6 +23,7 @@
 #include <QtWidgets>
 #include "mainwindow.h"
 #include "debug.h"
+#include "common.h"
 
 #ifdef WIN32
 #pragma execution_character_set("utf-8")
@@ -123,7 +124,7 @@ void MyChild::closeEvent(QCloseEvent *event)
 
 bool MyChild::loadFile(const QString &fileName)
 {
-    printLog(DEBUG, "loadFile %s.", static_cast<const char *>(fileName.toLocal8Bit()));
+    printLog(DEBUG, "loadFile %s.", narrow_cast<const char *>(fileName.toLocal8Bit()));
     if (!fileName.isEmpty()) {
         QFile file(fileName);
         if (!file.open(QFile::ReadOnly | QFile::Text)) {
@@ -327,7 +328,7 @@ void MyChild::lineNumberAreaPaintEvent(QPaintEvent *event)
 
     QTextBlock block = document()->firstBlock();
 
-    blockNumsPerPage = static_cast<int>(frameGeometry().bottom() / document()->documentLayout()->blockBoundingRect(block).height());
+    blockNumsPerPage = narrow_cast<int>(frameGeometry().bottom() / document()->documentLayout()->blockBoundingRect(block).height());
 
     if ((scrollToBlockNum != -1) && (scrollToBlockStep > -1)) {
         block = document()->findBlockByLineNumber(scrollToBlockNum);
@@ -337,8 +338,8 @@ void MyChild::lineNumberAreaPaintEvent(QPaintEvent *event)
         //qDebug() << "Line start is :" << _blockNumber;
     }
 
-    int top = static_cast<int>(document()->documentLayout()->blockBoundingRect(document()->firstBlock()).topLeft().ry());
-    int bottom = static_cast<int>(top + document()->documentLayout()->blockBoundingRect(document()->firstBlock()).height());
+    int top = narrow_cast<int>(document()->documentLayout()->blockBoundingRect(document()->firstBlock()).topLeft().ry());
+    int bottom = narrow_cast<int>(top + document()->documentLayout()->blockBoundingRect(document()->firstBlock()).height());
 
     while (block.isValid() && top <= event->rect().bottom()) {
         if (block.isVisible() && bottom >= event->rect().top()) {
@@ -349,7 +350,7 @@ void MyChild::lineNumberAreaPaintEvent(QPaintEvent *event)
 
         block = block.next();
         top = bottom;
-        bottom = static_cast<int>(top + document()->documentLayout()->blockBoundingRect(block).height());
+        bottom = narrow_cast<int>(top + document()->documentLayout()->blockBoundingRect(block).height());
         ++_blockNumber;
     }
 
@@ -388,7 +389,7 @@ void MyChild::scrollMapToBlock(int, int max)
 void MyChild::FirstVisibleBlockNum(int index)
 {
     if (scrollToBlockStep > 0) {
-        scrollToBlockNum = static_cast<int>(index * scrollToBlockStep);
+        scrollToBlockNum = narrow_cast<int>(index * scrollToBlockStep);
     }
 }
 
