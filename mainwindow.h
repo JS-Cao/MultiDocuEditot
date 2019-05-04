@@ -15,6 +15,8 @@ class QTabWidget;
 class QLabel;
 class QStatusBar;
 class QTextEdit;
+class QComboBox;
+class QTextCharFormat;
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
@@ -36,6 +38,8 @@ private:
     QMdiSubWindow *findMyChild(const QString &fileName);
     QWidget *findTagMyChild(const QString &fileName);
     void createStatusBar(QStatusBar *p_statusBar);
+    void setupTextActions(void);
+    void mergeFormatOnWordOrSelection(const QTextCharFormat &format);
 
     /* variable */
     QTabWidget *fileTab;
@@ -67,6 +71,9 @@ private:
     QString totalCountStr;
     QLabel *countLabel;
     QLabel *totalLabel;
+    /* format */
+    QComboBox *comboSize;
+
     int totalCount;
     int lineNum;
     int colNum;
@@ -96,6 +103,8 @@ private slots:
     void setWinFileTitle(void);
     void setTitlePostfix(bool isChanged);
     void setActiveTab(const int index);
+    void textSize(const QString &p);
+    void setComboIndex(void);
 public slots:
     void openAssignFile(QString fileName);
 signals:

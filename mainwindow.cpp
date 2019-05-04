@@ -1,4 +1,5 @@
 ﻿#include <cstdio>
+#include <algorithm>
 #include <QMenu>
 #include <QMenuBar>
 #include <QAction>
@@ -32,6 +33,13 @@
 #include <QLineEdit>
 #include <QPlainTextEdit>
 #include <QVariant>
+#include <QComboBox>
+#include <QFontComboBox>
+#include <QFontDatabase>
+#include <QTextCharFormat>
+#include <QToolBar>
+#include <QSizePolicy>
+#include <QLayout>
 #include "mainwindow.h"
 #include "mychild.h"
 #include "debug.h"
@@ -67,7 +75,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     try {
         fileTab = new QTabWidget(this);
-        // create menubar
         createActions();
     }
     catch(std::bad_alloc &memExc) {
@@ -132,6 +139,57 @@ void MainWindow::createStatusBar(QStatusBar *p_statusBar)
     p_statusBar->addPermanentWidget(totalLabel, 0);
     printLog(DEBUG, "statusBar init success.");
 }
+
+/**
+  * @brief 融合修改
+  * @param none
+  * @return none
+  * @auther caojingsong
+  * @date   2019-5-2
+  */
+void MainWindow::mergeFormatOnWordOrSelection(const QTextCharFormat &format)
+{
+    MyChild *p_activeSubWin = activeMyChild();
+    if (!p_activeSubWin) {
+        return;
+    }
+    QTextCursor cursor = p_activeSubWin->textCursor();
+    if (!cursor.hasSelection())
+        cursor.select(QTextCursor::WordUnderCursor);
+    cursor.mergeCharFormat(format); // 对光标选中的部分进行融合
+    //p_activeSubWin->mergeCurrentCharFormat(format);
+}
+
+/**
+  * @brief 创建字体编辑行为
+  * @param none
+  * @return none
+  * @auther JSCao
+  * @date   2019-5-2
+  */
+void MainWindow::setupTextActions(void)
+{
+    QToolBar *tb = addToolBar(tr("Format"));
+    // 设置工具栏可以移动到的区域
+    tb->setAllowedAreas(Qt::TopToolBarArea | Qt::BottomToolBarArea);
+    addToolBarBreak(Qt::TopToolBarArea);
+    //addToolBar(tb);
+
+    // create menubar
+    comboSize = new QComboBox(tb);
+    tb->addWidget(comboSize);
+    comboSize->setObjectName("comboSize");
+    comboSize->setEditable(true);
+
+    const QList<int> standardSizes = QFontDatabase::standardSizes();
+
+    std::for_each(standardSizes.begin(), standardSizes.end(),
+                  [this](const int& size){ comboSize->addItem(QString::number(size)); });
+    // 需要使用this指针因为comboSize为该类的成员变量
+
+    comboSize->setCurrentIndex(standardSizes.indexOf(QApplication::font().pointSize()/* 操作系统默认字体size */));
+    connect(comboSize, QOverload<const QString &>::of(&QComboBox::activated), this, &MainWindow::textSize);
+ }
 
 /**
   * @brief 创建各个主菜单和子菜单
@@ -220,6 +278,9 @@ void MainWindow::createActions(void)
     paboutQt = new QAction(tr("关于Qt"), this);
     paboutMenu->addAction(paboutQt);
     connect(paboutQt, &QAction::triggered, this, &MainWindow::aboutQt);
+
+    // format
+    setupTextActions();
 }
 
 /**
@@ -360,6 +421,43 @@ void MainWindow::writeSetting()
 
 /****************************** Place slot functiong in here ***************************************/
 
+/**
+  * @brief 【slot】设置Combo的索引
+  * @param  none
+  * @return none
+  * @auther caojingsong
+  * @date   2019-05-04
+  */
+void MainWindow::setComboIndex(void)
+{
+    MyChild *p_activeSubWin = activeMyChild();
+    if (p_activeSubWin == nullptr || comboSize == nullptr)
+        return;
+
+    const QList<int> standardSizes = QFontDatabase::standardSizes();
+
+    int size = p_activeSubWin->textCursor().charFormat().fontPointSize();
+    if (size == 0)
+        size = QApplication::font().pointSize();
+    comboSize->setCurrentIndex(standardSizes.indexOf(size));
+}
+
+/**
+  * @brief 【slot】设置字体size
+  * @param  none
+  * @return none
+  * @auther Qt
+  * @date   2019-05-04
+  */
+void MainWindow::textSize(const QString &p)
+{
+    qreal pointSize = p.toFloat();
+    if (p.toFloat() > 0) {
+        QTextCharFormat fmt;
+        fmt.setFontPointSize(pointSize);
+        mergeFormatOnWordOrSelection(fmt);
+    }
+}
 
 /**
   * @brief 【slot】设置窗口标题后缀
@@ -477,6 +575,7 @@ MyChild * MainWindow::createMyChild()
     connect(child, &MyChild::textChanged, this, &MainWindow::textTotalCount);
     connect(child, &MyChild::textChanged, this, &MainWindow::setWinFileTitle);
     connect(child, &MyChild::cursorPositionChanged, this, &MainWindow::lineAndColmessage);
+    connect(child, &MyChild::cursorPositionChanged, this, &MainWindow::setComboIndex);
 
     return child;
 }
