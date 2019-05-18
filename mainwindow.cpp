@@ -175,20 +175,24 @@ void MainWindow::setupTextActions(void)
     addToolBarBreak(Qt::TopToolBarArea);
     //addToolBar(tb);
 
+    pcomboFont = new QFontComboBox;
+    tb->addWidget(pcomboFont);
+    connect(pcomboFont, QOverload<const QString &>::of(&QComboBox::activated), this, &MainWindow::textFamily);
+
     // create menubar
-    comboSize = new QComboBox(tb);
-    tb->addWidget(comboSize);
-    comboSize->setObjectName("comboSize");
-    comboSize->setEditable(true);
+    pcomboSize = new QComboBox(tb);
+    tb->addWidget(pcomboSize);
+    pcomboSize->setObjectName("comboSize");
+    pcomboSize->setEditable(true);
 
     const QList<int> standardSizes = QFontDatabase::standardSizes();
 
     std::for_each(standardSizes.begin(), standardSizes.end(),
-                  [this](const int& size){ comboSize->addItem(QString::number(size)); });
+                  [this](const int& size){ pcomboSize->addItem(QString::number(size)); });
     // 需要使用this指针因为comboSize为该类的成员变量
 
-    comboSize->setCurrentIndex(standardSizes.indexOf(QApplication::font().pointSize()/* 操作系统默认字体size */));
-    connect(comboSize, QOverload<const QString &>::of(&QComboBox::activated), this, &MainWindow::textSize);
+    pcomboSize->setCurrentIndex(standardSizes.indexOf(QApplication::font().pointSize()/* 操作系统默认字体size */));
+    connect(pcomboSize, QOverload<const QString &>::of(&QComboBox::activated), this, &MainWindow::textSize);
  }
 
 /**
@@ -431,7 +435,7 @@ void MainWindow::writeSetting()
 void MainWindow::setComboIndex(void)
 {
     MyChild *p_activeSubWin = activeMyChild();
-    if (p_activeSubWin == nullptr || comboSize == nullptr)
+    if (p_activeSubWin == nullptr || pcomboSize == nullptr)
         return;
 
     const QList<int> standardSizes = QFontDatabase::standardSizes();
@@ -439,7 +443,38 @@ void MainWindow::setComboIndex(void)
     int size = p_activeSubWin->textCursor().charFormat().fontPointSize();
     if (size == 0)
         size = QApplication::font().pointSize();
-    comboSize->setCurrentIndex(standardSizes.indexOf(size));
+    pcomboSize->setCurrentIndex(standardSizes.indexOf(size));
+}
+
+/**
+  * @brief 【slot】设置Combo的索引
+  * @param  none
+  * @return none
+  * @auther caojingsong
+  * @date   2019-05-18
+  */
+void MainWindow::setComboFont(void)
+{
+    MyChild *p_activeSubWin = activeMyChild();
+    if (p_activeSubWin == nullptr || pcomboSize == nullptr)
+        return;
+
+    QFont font = p_activeSubWin->textCursor().charFormat().font();
+    pcomboFont->setCurrentFont(font);
+}
+
+/**
+  * @brief 【slot】设置字体格式
+  * @param  none
+  * @return none
+  * @auther Qt
+  * @date   2019-05-18
+  */
+void MainWindow::textFamily(const QString &f)
+{
+    QTextCharFormat fmt;
+    fmt.setFontFamily(f);
+    mergeFormatOnWordOrSelection(fmt);
 }
 
 /**
@@ -576,6 +611,7 @@ MyChild * MainWindow::createMyChild()
     connect(child, &MyChild::textChanged, this, &MainWindow::setWinFileTitle);
     connect(child, &MyChild::cursorPositionChanged, this, &MainWindow::lineAndColmessage);
     connect(child, &MyChild::cursorPositionChanged, this, &MainWindow::setComboIndex);
+    connect(child, &MyChild::cursorPositionChanged, this, &MainWindow::setComboFont);
 
     return child;
 }

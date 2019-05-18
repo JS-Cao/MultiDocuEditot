@@ -16,6 +16,7 @@ class QLabel;
 class QStatusBar;
 class QTextEdit;
 class QComboBox;
+class QFontComboBox;
 class QTextCharFormat;
 QT_END_NAMESPACE
 
@@ -72,7 +73,8 @@ private:
     QLabel *countLabel;
     QLabel *totalLabel;
     /* format */
-    QComboBox *comboSize;
+    QComboBox *pcomboSize;
+    QFontComboBox *pcomboFont;
 
     int totalCount;
     int lineNum;
@@ -104,7 +106,9 @@ private slots:
     void setTitlePostfix(bool isChanged);
     void setActiveTab(const int index);
     void textSize(const QString &p);
+    void textFamily(const QString &f);
     void setComboIndex(void);
+    void setComboFont(void);
 public slots:
     void openAssignFile(QString fileName);
 signals:

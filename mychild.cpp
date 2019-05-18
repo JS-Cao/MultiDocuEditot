@@ -132,10 +132,15 @@ bool MyChild::loadFile(const QString &fileName)
             return false;
         }
 
-        QTextStream in(&file);
-        QApplication::setOverrideCursor(Qt::WaitCursor);
-        setPlainText(in.readAll());
-        QApplication::restoreOverrideCursor();
+        QByteArray data = file.readAll();
+        QTextCodec *codec = Qt::codecForHtml(data);
+        QString str = codec->toUnicode(data);
+        if (Qt::mightBeRichText(str)) {
+            setHtml(str);
+        } else {
+            str = QString::fromLocal8Bit(data);
+            setPlainText(str);
+        }
         setCurrentFile(fileName);
         connect(document(), &QTextDocument::contentsChanged, this, &MyChild::documentWasModified);
         return true;
@@ -177,6 +182,7 @@ bool MyChild::saveFile(const QString &fileName)
         QMessageBox::warning(this, tr("多文档编辑器"), tr("无法写入文件%1\n%2").arg(fileName).arg(file.errorString()));
         return false;
     }
+
     QTextStream out(&file);
     QApplication::setOverrideCursor(Qt::WaitCursor);
     out << toPlainText();
