@@ -46,7 +46,7 @@ MyChild::MyChild(QWidget *parent)
     //this->verticalScrollBar()->connect(verticalScrollBar(), &QScrollBar::rangeChanged, this, &MyChild::scrollMapToBlock);
 
     //connect(this, &MyChild::textChanged, this, &MyChild::updateLineNumberAreaWidth);
-    //connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(highlightCurrentLine()));
+    connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(highlightCurrentLine()));
     //connect(document(), &QTextDocument::blockCountChanged, this, &MyChild::_updateLineNumberArea);
     //connect(verticalScrollBar(), &QScrollBar::valueChanged, this, &MyChild::_updateLineNumberArea);
 
@@ -136,8 +136,10 @@ bool MyChild::loadFile(const QString &fileName)
         QTextCodec *codec = Qt::codecForHtml(data);
         QString str = codec->toUnicode(data);
         if (Qt::mightBeRichText(str)) {
+            printLog(DEBUG, "HTML");
             setHtml(str);
         } else {
+            printLog(DEBUG, "norman text");
             str = QString::fromLocal8Bit(data);
             setPlainText(str);
         }
@@ -177,17 +179,19 @@ bool MyChild::saveAs()
 
 bool MyChild::saveFile(const QString &fileName)
 {
+    printLog(DEBUG, "saveFile %s.", narrow_cast<const char *>(fileName.toLocal8Bit()));
     QFile file(fileName);
     if (!file.open(QFile::WriteOnly | QFile::Text)) {
         QMessageBox::warning(this, tr("多文档编辑器"), tr("无法写入文件%1\n%2").arg(fileName).arg(file.errorString()));
         return false;
     }
 
-    QTextStream out(&file);
     QApplication::setOverrideCursor(Qt::WaitCursor);
-    out << toPlainText();
+    QTextDocumentWriter writer(fileName);
+    bool isSuccess = writer.write(this->document());
     QApplication::restoreOverrideCursor();
-    setCurrentFile(fileName);
+    if (isSuccess)
+        setCurrentFile(fileName);
 
     return true;
 }
