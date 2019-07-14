@@ -39,6 +39,7 @@ MyChild::MyChild(QWidget *parent)
     scrollToBlockStep = -1;
     blockNumsPerPage = -1;
     idIsChanged = false;
+    isRichtext = false;
 
     //this->verticalScrollBar()->setSingleStep(17);
     //this->verticalScrollBar()->setPageStep(17);
@@ -136,12 +137,12 @@ bool MyChild::loadFile(const QString &fileName)
         QTextCodec *codec = Qt::codecForHtml(data);
         QString str = codec->toUnicode(data);
         if (Qt::mightBeRichText(str)) {
-            printLog(DEBUG, "HTML");
             setHtml(str);
+            isRichtext = true;
         } else {
-            printLog(DEBUG, "norman text");
             str = QString::fromLocal8Bit(data);
             setPlainText(str);
+            isRichtext = false;
         }
         setCurrentFile(fileName);
         connect(document(), &QTextDocument::contentsChanged, this, &MyChild::documentWasModified);
@@ -180,6 +181,7 @@ bool MyChild::saveAs()
 bool MyChild::saveFile(const QString &fileName)
 {
     printLog(DEBUG, "saveFile %s.", narrow_cast<const char *>(fileName.toLocal8Bit()));
+    bool isSuccess = true;
     QFile file(fileName);
     if (!file.open(QFile::WriteOnly | QFile::Text)) {
         QMessageBox::warning(this, tr("多文档编辑器"), tr("无法写入文件%1\n%2").arg(fileName).arg(file.errorString()));
@@ -187,11 +189,20 @@ bool MyChild::saveFile(const QString &fileName)
     }
 
     QApplication::setOverrideCursor(Qt::WaitCursor);
-    QTextDocumentWriter writer(fileName);
-    bool isSuccess = writer.write(this->document());
+    if (isRichtext) {
+        QTextDocumentWriter writer(fileName);
+        isSuccess = writer.write(this->document());
+    }
+    else {
+        QTextStream out(&file);
+        out << toPlainText();
+    }
+
     QApplication::restoreOverrideCursor();
-    if (isSuccess)
+    if (isSuccess) {
+        document()->setModified(false);
         setCurrentFile(fileName);
+    }
 
     return true;
 }

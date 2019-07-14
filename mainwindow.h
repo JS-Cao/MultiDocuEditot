@@ -63,6 +63,16 @@ private:
     QMenu *pwindowMenu;
     QSignalMapper *pwinMapper;
 
+    QMenu *pformatMenu;
+    QAction *pbold;
+    QAction *pitalic;
+    QAction *punderline;
+    QAction *pleft;
+    QAction *pright;
+    QAction *pcenter;
+    QAction *pjustify;
+    QAction *pcolor;
+
     QAction *pseparatorAct;
 
     QMenu *paboutMenu;
@@ -98,6 +108,10 @@ private slots:
     void cut();
     void copy();
     void paste();
+    void textBold();
+    void textItalic();
+    void textUnderline();
+    void textAlign(QAction *a);
     void aboutQt();
 
     void lineAndColmessage(void);

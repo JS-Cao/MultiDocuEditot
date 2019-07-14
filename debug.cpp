@@ -1,7 +1,7 @@
 ﻿#include <QCoreApplication>
 #include "debug.h"
 
-#define BUF_SIZE 256
+#define BUF_SIZE 2560
 static char g_buf[BUF_SIZE] = {0};
 debug * g_debug = nullptr;
 QTime g_time;

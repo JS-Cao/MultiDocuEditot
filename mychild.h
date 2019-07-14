@@ -36,6 +36,7 @@ protected:
     //void resizeEvent(QResizeEvent *event) override;
 private:
     bool idIsChanged;
+    bool isRichtext;
     int myId;
     int isReceivedClosedFlag;
     double scrollToBlockStep;  // 滚动条到步长的计算

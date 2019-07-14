@@ -157,7 +157,7 @@ void MainWindow::mergeFormatOnWordOrSelection(const QTextCharFormat &format)
     if (!cursor.hasSelection())
         cursor.select(QTextCursor::WordUnderCursor);
     cursor.mergeCharFormat(format); // 对光标选中的部分进行融合
-    //p_activeSubWin->mergeCurrentCharFormat(format);
+    p_activeSubWin->mergeCurrentCharFormat(format);
 }
 
 /**
@@ -269,6 +269,76 @@ void MainWindow::createActions(void)
     ppasteAct->setStatusTip(tr("粘贴"));
     connect(ppasteAct, &QAction::triggered, this, &MainWindow::paste);
     peditMenu->addAction(ppasteAct);
+
+    // 字体
+    pformatMenu = menuBar()->addMenu(tr("字体"));
+    pbold = pformatMenu->addAction(tr("加粗"), this, &MainWindow::textBold);
+    pbold->setShortcut(Qt::CTRL + Qt::Key_B);
+    pbold->setPriority(QAction::LowPriority);
+    pbold->setStatusTip(tr("字体加粗"));
+    QFont bold;
+    bold.setBold(true);
+    pbold->setFont(bold);
+    pbold->setCheckable(true);
+
+    pitalic = pformatMenu->addAction(tr("斜体"), this, &MainWindow::textItalic);
+    pitalic->setShortcut(Qt::CTRL + Qt::Key_I);
+    pitalic->setPriority(QAction::LowPriority);
+    pitalic->setStatusTip(tr("字体斜体"));
+    QFont italic;
+    italic.setItalic(true);
+    pitalic->setFont(italic);
+    pitalic->setCheckable(true);
+
+    punderline = pformatMenu->addAction(tr("下划线"), this, &MainWindow::textUnderline);
+    punderline->setShortcut(Qt::CTRL + Qt::Key_U);
+    punderline->setPriority(QAction::LowPriority);
+    punderline->setStatusTip(tr("字体下划线"));
+    QFont underline;
+    underline.setUnderline(true);
+    punderline->setFont(underline);
+    punderline->setCheckable(true);
+
+    pformatMenu->addSeparator();
+    // 对齐方式
+    pleft = new QAction(tr("左对齐"), this);
+    pleft->setShortcut(Qt::CTRL + Qt::Key_L);
+    pleft->setPriority(QAction::LowPriority);
+    pleft->setStatusTip(tr("向左对齐"));
+    pleft->setCheckable(true);
+    pright = new QAction(tr("右对齐"), this);
+    pright->setShortcut(Qt::CTRL + Qt::Key_R);
+    pright->setPriority(QAction::LowPriority);
+    pright->setStatusTip(tr("向右对齐"));
+    pright->setCheckable(true);
+    pcenter = new QAction(tr("居中对齐"), this);
+    pcenter->setShortcut(Qt::CTRL + Qt::Key_E);
+    pcenter->setPriority(QAction::LowPriority);
+    pcenter->setStatusTip(tr("居中对齐"));
+    pcenter->setCheckable(true);
+    pjustify = new QAction(tr("两端对齐"), this);
+    pjustify->setShortcut(Qt::CTRL + Qt::Key_J);
+    pjustify->setPriority(QAction::LowPriority);
+    pjustify->setStatusTip(tr("两端对齐"));
+    pjustify->setCheckable(true);
+
+    QActionGroup *alignGroup = new QActionGroup(this);
+    connect(alignGroup, &QActionGroup::triggered, this, &MainWindow::textAlign);
+    // Make sure the alignLeft  is always left of the alignRight,主要针对往添加工具栏添加时有用
+    if (QApplication::isLeftToRight()) {
+        alignGroup->addAction(pleft);
+        alignGroup->addAction(pcenter);
+        alignGroup->addAction(pright);
+    } else {
+        alignGroup->addAction(pright);
+        alignGroup->addAction(pcenter);
+        alignGroup->addAction(pleft);
+    }
+    alignGroup->addAction(pjustify);
+
+    pformatMenu->addActions(alignGroup->actions());
+
+    pformatMenu->addSeparator();
 
     // window menu
     pwindowMenu = menuBar()->addMenu(tr("窗口(&W)"));
@@ -424,6 +494,70 @@ void MainWindow::writeSetting()
 
 
 /****************************** Place slot functiong in here ***************************************/
+/**
+  * @brief 【slot】下滑线设置
+  * @param  none
+  * @return none
+  * @auther QT
+  * @date   2019-07-14
+  */
+void MainWindow::textAlign(QAction *a)
+{
+    MyChild *p_activeSubWin = activeMyChild();
+    if (p_activeSubWin == nullptr || a == nullptr)
+        return;
+
+    if (a == pleft)
+        p_activeSubWin->setAlignment(Qt::AlignLeft | Qt::AlignAbsolute);
+    else if (a == pcenter)
+        p_activeSubWin->setAlignment(Qt::AlignHCenter);
+    else if (a == pright)
+        p_activeSubWin->setAlignment(Qt::AlignRight | Qt::AlignAbsolute);
+    else if (a == pjustify)
+        p_activeSubWin->setAlignment(Qt::AlignJustify);
+}
+
+/**
+  * @brief 【slot】下滑线设置
+  * @param  none
+  * @return none
+  * @auther QT
+  * @date   2019-07-14
+  */
+void MainWindow::textUnderline(void)
+{
+    QTextCharFormat fmt;
+    fmt.setFontUnderline(punderline->isChecked());
+    mergeFormatOnWordOrSelection(fmt);
+}
+
+/**
+  * @brief 【slot】斜体字设置
+  * @param  none
+  * @return none
+  * @auther QT
+  * @date   2019-07-14
+  */
+void MainWindow::textItalic(void)
+{
+    QTextCharFormat fmt;
+    fmt.setFontItalic(pitalic->isChecked());
+    mergeFormatOnWordOrSelection(fmt);
+}
+
+/**
+  * @brief 【slot】黑体字设置
+  * @param  none
+  * @return none
+  * @auther QT
+  * @date   2019-07-14
+  */
+void MainWindow::textBold(void)
+{
+    QTextCharFormat fmt;
+    fmt.setFontWeight(pbold->isChecked() ? QFont::Bold : QFont::Normal);
+    mergeFormatOnWordOrSelection(fmt);
+}
 
 /**
   * @brief 【slot】设置Combo的索引
