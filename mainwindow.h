@@ -18,6 +18,7 @@ class QTextEdit;
 class QComboBox;
 class QFontComboBox;
 class QTextCharFormat;
+class QColor;
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
@@ -41,6 +42,7 @@ private:
     void createStatusBar(QStatusBar *p_statusBar);
     void setupTextActions(void);
     void mergeFormatOnWordOrSelection(const QTextCharFormat &format);
+    void colorChanged(const QColor &c);
 
     /* variable */
     QTabWidget *fileTab;
@@ -112,6 +114,7 @@ private slots:
     void textItalic();
     void textUnderline();
     void textAlign(QAction *a);
+    void textColorset();
     void aboutQt();
 
     void lineAndColmessage(void);

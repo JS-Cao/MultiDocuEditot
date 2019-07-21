@@ -40,6 +40,9 @@
 #include <QToolBar>
 #include <QSizePolicy>
 #include <QLayout>
+#include <QPixmap>
+#include <QColor>
+#include <QColorDialog>
 #include "mainwindow.h"
 #include "mychild.h"
 #include "debug.h"
@@ -193,6 +196,8 @@ void MainWindow::setupTextActions(void)
 
     pcomboSize->setCurrentIndex(standardSizes.indexOf(QApplication::font().pointSize()/* 操作系统默认字体size */));
     connect(pcomboSize, QOverload<const QString &>::of(&QComboBox::activated), this, &MainWindow::textSize);
+
+    tb->addAction(pcolor);
  }
 
 /**
@@ -339,6 +344,10 @@ void MainWindow::createActions(void)
     pformatMenu->addActions(alignGroup->actions());
 
     pformatMenu->addSeparator();
+
+    QPixmap pix(16, 16);
+    pix.fill(Qt::black);
+    pcolor = pformatMenu->addAction(pix, tr("颜色"), this, &MainWindow::textColorset);
 
     // window menu
     pwindowMenu = menuBar()->addMenu(tr("窗口(&W)"));
@@ -494,8 +503,33 @@ void MainWindow::writeSetting()
 
 
 /****************************** Place slot functiong in here ***************************************/
+
+void MainWindow::colorChanged(const QColor &c)
+{
+    QPixmap pix(16, 16);
+    pix.fill(c);
+    pcolor->setIcon(pix);
+}
 /**
-  * @brief 【slot】下滑线设置
+  * @brief 【slot】字体颜色设置
+  * @param  none
+  * @return none
+  * @auther QT
+  * @date   2019-07-18
+  */
+void MainWindow::textColorset(void)
+{
+    MyChild *p_activeSubWin = activeMyChild();
+    QColor col = QColorDialog::getColor(p_activeSubWin->textColor(), this);
+    if (!col.isValid())
+        return;
+    QTextCharFormat fmt;
+    fmt.setForeground(col);
+    mergeFormatOnWordOrSelection(fmt);
+    colorChanged(col);
+}
+/**
+  * @brief 【slot】文本对齐设置
   * @param  none
   * @return none
   * @auther QT
