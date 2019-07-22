@@ -122,6 +122,42 @@ MainWindow::~MainWindow()
 }
 
 /**
+  * @brief 字体菜单栏对齐方式改变
+  * @param none
+  * @return none
+  * @auther JSCao
+  * @date   2019-07-22
+  */
+void MainWindow::alignmentChanged(Qt::Alignment a)
+{
+    if (a & Qt::AlignLeft)
+        pleft->setChecked(true);
+    else if (a & Qt::AlignHCenter)
+        pcenter->setChecked(true);
+    else if (a & Qt::AlignRight)
+        pright->setChecked(true);
+    else if (a & Qt::AlignJustify)
+        pjustify->setChecked(true);
+}
+
+/**
+  * @brief 字体菜单栏格式改变
+  * @param none
+  * @return none
+  * @auther JSCao
+  * @date   2019-07-22
+  */
+void MainWindow::fontChanged(const QFont & f)
+{
+    // 之所以需要手动设置是因为当用户点击action时，
+    // 其会自动根据ischecked来设置setChecked（若为真设为假，若为假设为真，可以理解为状态反转）
+    // 因此我们需要根据光标选择的内容手动更改
+    pbold->setChecked(f.bold());
+    pitalic->setChecked(f.italic());
+    punderline->setChecked(f.underline());
+}
+
+/**
   * @brief 创建各个主菜单和子菜单
   * @param none
   * @return none
@@ -503,6 +539,18 @@ void MainWindow::writeSetting()
 
 
 /****************************** Place slot functiong in here ***************************************/
+/**
+  * @brief 【slot】字体状态更新
+  * @param  none
+  * @return none
+  * @auther QT
+  * @date   2019-07-18
+  */
+void MainWindow::currentCharFormatChanged(const QTextCharFormat &format)
+{
+    fontChanged(format.font());
+    colorChanged(format.foreground().color());
+}
 
 void MainWindow::colorChanged(const QColor &c)
 {
@@ -612,6 +660,8 @@ void MainWindow::setComboIndex(void)
     if (size == 0)
         size = QApplication::font().pointSize();
     pcomboSize->setCurrentIndex(standardSizes.indexOf(size));
+
+    alignmentChanged(p_activeSubWin->alignment());
 }
 
 /**
@@ -780,6 +830,7 @@ MyChild * MainWindow::createMyChild()
     connect(child, &MyChild::cursorPositionChanged, this, &MainWindow::lineAndColmessage);
     connect(child, &MyChild::cursorPositionChanged, this, &MainWindow::setComboIndex);
     connect(child, &MyChild::cursorPositionChanged, this, &MainWindow::setComboFont);
+    connect(child, &MyChild::currentCharFormatChanged, this, &MainWindow::currentCharFormatChanged);
 
     return child;
 }

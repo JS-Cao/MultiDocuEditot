@@ -19,6 +19,7 @@ class QComboBox;
 class QFontComboBox;
 class QTextCharFormat;
 class QColor;
+class QFont;
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
@@ -43,6 +44,8 @@ private:
     void setupTextActions(void);
     void mergeFormatOnWordOrSelection(const QTextCharFormat &format);
     void colorChanged(const QColor &c);
+    void fontChanged(const QFont & f);
+    void alignmentChanged(Qt::Alignment a);
 
     /* variable */
     QTabWidget *fileTab;
@@ -126,6 +129,7 @@ private slots:
     void textFamily(const QString &f);
     void setComboIndex(void);
     void setComboFont(void);
+    void currentCharFormatChanged(const QTextCharFormat &format);
 public slots:
     void openAssignFile(QString fileName);
 signals:
