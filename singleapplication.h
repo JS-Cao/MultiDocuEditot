@@ -1,20 +1,12 @@
 ﻿#ifndef SINGLEAPPLICATION_H
 #define SINGLEAPPLICATION_H
 
-#include <thread>
 #include <QApplication>
-#include <QSharedMemory>
 
-extern void fetchSharemem(void *mw);
 QT_BEGIN_NAMESPACE
 class MainWindow;
+class QLocalServer;
 QT_END_NAMESPACE
-
-struct share_arg
-{
-    class MainWindow *p_mw;
-    class singleApplication *p_sa;
-};
 
 class singleApplication : public QApplication
 {
@@ -23,17 +15,19 @@ public:
     singleApplication(int & argc, char *argv[]);
     ~singleApplication();
     bool appIsRunning(void) { return isRunning; }
-    friend void fetchSharemem(void *mw);
-
-    std::thread m_thread;
+    MainWindow * m_mw;
 signals:
     void fileName(QString fileName);
 private:
     /* function */
+    void initLocalServer(void);
+    void newLocalServer(void);
     /* variable */
-    QSharedMemory m_sharedMemory;
+    QLocalServer *m_localServer;
+    QString m_serverName;
     bool isRunning;
 private slots:
+    void newLocalConnection(void);
 };
 
 #endif // SINGLEAPPLICATION_H__
