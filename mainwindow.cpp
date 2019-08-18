@@ -43,6 +43,9 @@
 #include <QPixmap>
 #include <QColor>
 #include <QColorDialog>
+#include <QPrinter>
+#include <QPrintDialog>
+#include <QPrintPreviewDialog>
 #include "mainwindow.h"
 #include "mychild.h"
 #include "debug.h"
@@ -259,6 +262,7 @@ void MainWindow::createActions(void)
     popenAct->setStatusTip(tr("打开文件"));
     connect(popenAct, &QAction::triggered, this, &MainWindow::openFile);
     pfileMenu->addAction(popenAct);
+    pfileMenu->addSeparator();
 
     psaveAct = new QAction(tr("保存(&S)"), this);
     psaveAct->setShortcuts(QKeySequence::Save);
@@ -271,12 +275,28 @@ void MainWindow::createActions(void)
     psaveAsAct->setStatusTip(tr("另存为文件"));
     connect(psaveAsAct, &QAction::triggered, this, &MainWindow::fileSaveAs);
     pfileMenu->addAction(psaveAsAct);
+    pfileMenu->addSeparator();
+
+#ifndef QT_NO_PRINTER
+    QAction * tmpA = nullptr;
+    tmpA = pfileMenu->addAction(tr("打印"), this, &MainWindow::filePrint);
+    tmpA->setPriority(QAction::LowPriority);
+    tmpA->setShortcut(QKeySequence::Print);
+
+    tmpA = pfileMenu->addAction(tr("打印预览"), this, &MainWindow::filePrintPreview);
+
+    tmpA = pfileMenu->addAction(tr("输出为PDF"), this, &MainWindow::filePrintPdf);
+    tmpA->setPriority(QAction::LowPriority);
+    tmpA->setShortcut(Qt::CTRL + Qt::Key_D);
+    pfileMenu->addSeparator();
+#endif
 
     pexitAct = new QAction(tr("退出(&X)"), this);
     pexitAct->setShortcuts(QKeySequence::Quit);
     pexitAct->setStatusTip(tr("退出应用程序"));
     connect(pexitAct, &QAction::triggered, qApp, &QApplication::closeAllWindows);
     pfileMenu->addAction(pexitAct);
+    pexitAct->setShortcut(Qt::CTRL + Qt::Key_Q);
 
     // edit menu
     peditMenu = menuBar()->addMenu(tr("编辑(&E)"));
@@ -539,6 +559,92 @@ void MainWindow::writeSetting()
 
 
 /****************************** Place slot functiong in here ***************************************/
+/**
+  * @brief 【slot】导出PDF
+  * @param  none
+  * @return none
+  * @auther QT
+  * @date   2019-08-18
+  */
+void MainWindow::filePrintPdf(void)
+{
+#ifndef QT_NO_PRINTER
+//! [0]
+    QFileDialog fileDialog(this, tr("Export PDF"));
+    fileDialog.setAcceptMode(QFileDialog::AcceptSave);
+    fileDialog.setMimeTypeFilters(QStringList("application/pdf"));
+    fileDialog.setDefaultSuffix("pdf");
+    if (fileDialog.exec() != QDialog::Accepted)
+        return;
+    QString fileName = fileDialog.selectedFiles().first();
+    QPrinter printer(QPrinter::HighResolution);
+    printer.setOutputFormat(QPrinter::PdfFormat);
+    printer.setOutputFileName(fileName);
+    MyChild * p_child = activeMyChild();
+    if (p_child)
+        p_child->document()->print(&printer);
+    statusBar()->showMessage(tr("Exported \"%1\"")
+                             .arg(QDir::toNativeSeparators(fileName)));
+//! [0]
+#endif
+}
+/**
+  * @brief 【slot】文件打印预览
+  * @param  none
+  * @return none
+  * @auther QT
+  * @date   2019-08-18
+  */
+void MainWindow::filePrintPreview(void)
+{
+#if QT_CONFIG(printpreviewdialog)
+    QPrinter printer(QPrinter::HighResolution);
+    QPrintPreviewDialog preview(&printer, this);
+    connect(&preview, &QPrintPreviewDialog::paintRequested, this, &MainWindow::printPreview);
+    preview.exec();
+#endif
+}
+
+/**
+  * @brief 【slot】文件打印
+  * @param  none
+  * @return none
+  * @auther QT
+  * @date   2019-08-18
+  */
+void MainWindow::printPreview(QPrinter *printer)
+{
+#ifdef QT_NO_PRINTER
+    Q_UNUSED(printer);
+#else
+    MyChild * p_child = activeMyChild();
+    if (p_child)
+        p_child->print(printer);
+#endif
+}
+
+/**
+  * @brief 【slot】文件打印
+  * @param  none
+  * @return none
+  * @auther QT
+  * @date   2019-08-17
+  */
+void MainWindow::filePrint(void)
+{
+#if QT_CONFIG(printdialog)
+    QPrinter printer(QPrinter::HighResolution);
+    QPrintDialog *dlg = new QPrintDialog(&printer, this);
+    MyChild * p_child = activeMyChild();
+    if (p_child && p_child->textCursor().hasSelection())
+        dlg->addEnabledOption(QAbstractPrintDialog::PrintSelection);
+    dlg->setWindowTitle(tr("Print Document"));
+    if (p_child && dlg->exec() == QDialog::Accepted)
+        p_child->print(&printer);
+    delete dlg;
+#endif
+}
+
 /**
   * @brief 【slot】字体状态更新
   * @param  none

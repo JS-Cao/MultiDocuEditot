@@ -20,6 +20,7 @@ class QFontComboBox;
 class QTextCharFormat;
 class QColor;
 class QFont;
+class QPrinter;
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
@@ -130,6 +131,10 @@ private slots:
     void setComboIndex(void);
     void setComboFont(void);
     void currentCharFormatChanged(const QTextCharFormat &format);
+    void filePrint(void);
+    void filePrintPreview(void);
+    void printPreview(QPrinter *printer);
+    void filePrintPdf(void);
 public slots:
     void openAssignFile(QString fileName);
 signals:
