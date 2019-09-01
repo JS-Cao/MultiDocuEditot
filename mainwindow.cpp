@@ -46,6 +46,7 @@
 #include <QPrinter>
 #include <QPrintDialog>
 #include <QPrintPreviewDialog>
+#include <QTextList>
 #include "mainwindow.h"
 #include "mychild.h"
 #include "debug.h"
@@ -216,6 +217,18 @@ void MainWindow::setupTextActions(void)
     tb->setAllowedAreas(Qt::TopToolBarArea | Qt::BottomToolBarArea);
     addToolBarBreak(Qt::TopToolBarArea);
     //addToolBar(tb);
+    pcomboStyle = new QComboBox(tb);
+    tb->addWidget(pcomboStyle);
+    pcomboStyle->addItem(tr("Standard"));
+    pcomboStyle->addItem(tr("Bullet List (Disc)"));
+    pcomboStyle->addItem(tr("Bullet List (Circle)"));
+    pcomboStyle->addItem(tr("Bullet List (Square)"));
+    pcomboStyle->addItem(tr("Ordered List (Decimal)"));
+    pcomboStyle->addItem(tr("Ordered List (Alpha lower)"));
+    pcomboStyle->addItem(tr("Ordered List (Alpha upper)"));
+    pcomboStyle->addItem(tr("Ordered List (Roman lower)"));
+    pcomboStyle->addItem(tr("Ordered List (Roman upper)"));
+    connect(pcomboStyle, QOverload<int>::of(&QComboBox::activated), this, &MainWindow::textStyle);
 
     pcomboFont = new QFontComboBox;
     tb->addWidget(pcomboFont);
@@ -559,6 +572,79 @@ void MainWindow::writeSetting()
 
 
 /****************************** Place slot functiong in here ***************************************/
+/**
+  * @brief 【slot】设置排序
+  * @param  none
+  * @return none
+  * @auther QT
+  * @date   2019-09-01
+  */
+void MainWindow::textStyle(int styleIndex)
+{
+    MyChild * p_child = activeMyChild();
+    if (!p_child)
+        return;
+
+    QTextCursor cursor = p_child->textCursor();
+
+    if (styleIndex != 0) {
+        QTextListFormat::Style style = QTextListFormat::ListDisc;
+
+        switch (styleIndex) {
+            default:
+            case 1:
+                style = QTextListFormat::ListDisc;
+                break;
+            case 2:
+                style = QTextListFormat::ListCircle;
+                break;
+            case 3:
+                style = QTextListFormat::ListSquare;
+                break;
+            case 4:
+                style = QTextListFormat::ListDecimal;
+                break;
+            case 5:
+                style = QTextListFormat::ListLowerAlpha;
+                break;
+            case 6:
+                style = QTextListFormat::ListUpperAlpha;
+                break;
+            case 7:
+                style = QTextListFormat::ListLowerRoman;
+                break;
+            case 8:
+                style = QTextListFormat::ListUpperRoman;
+                break;
+        }
+
+        cursor.beginEditBlock();
+
+        QTextBlockFormat blockFmt = cursor.blockFormat();
+
+        QTextListFormat listFmt;
+
+        if (cursor.currentList()) {
+            listFmt = cursor.currentList()->format();
+        } else {
+            listFmt.setIndent(blockFmt.indent() + 1);
+            blockFmt.setIndent(0);
+            cursor.setBlockFormat(blockFmt);
+        }
+
+        listFmt.setStyle(style);
+
+        cursor.createList(listFmt);
+
+        cursor.endEditBlock();
+    } else {
+        // ####
+        QTextBlockFormat bfmt;
+        bfmt.setObjectIndex(-1);
+        cursor.mergeBlockFormat(bfmt);
+    }
+}
+
 /**
   * @brief 【slot】导出PDF
   * @param  none

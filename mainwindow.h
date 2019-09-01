@@ -89,6 +89,7 @@ private:
     QLabel *countLabel;
     QLabel *totalLabel;
     /* format */
+    QComboBox *pcomboStyle;
     QComboBox *pcomboSize;
     QFontComboBox *pcomboFont;
 
@@ -128,6 +129,7 @@ private slots:
     void setActiveTab(const int index);
     void textSize(const QString &p);
     void textFamily(const QString &f);
+    void textStyle(int styleIndex);
     void setComboIndex(void);
     void setComboFont(void);
     void currentCharFormatChanged(const QTextCharFormat &format);

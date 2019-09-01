@@ -46,6 +46,9 @@ singleApplication::singleApplication(int & argc, char *argv[])
          m_localServer->close();
          delete m_localServer;
      }
+     if (g_debug) {
+         delete g_debug;
+     }
  }
 
  /**
