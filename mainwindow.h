@@ -21,6 +21,7 @@ class QTextCharFormat;
 class QColor;
 class QFont;
 class QPrinter;
+class QEvent;
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
@@ -32,6 +33,7 @@ public:
 
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
+    bool eventFilter(QObject *watched, QEvent *event) Q_DECL_OVERRIDE;
 
 private:
     /* function */

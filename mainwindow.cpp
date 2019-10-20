@@ -47,6 +47,8 @@
 #include <QPrintDialog>
 #include <QPrintPreviewDialog>
 #include <QTextList>
+#include <QMouseEvent>
+#include <QEvent>
 #include "mainwindow.h"
 #include "mychild.h"
 #include "debug.h"
@@ -82,6 +84,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     try {
         fileTab = new QTabWidget(this);
+        fileTab->installEventFilter(this);
         createActions();
     }
     catch(std::bad_alloc &memExc) {
@@ -268,6 +271,7 @@ void MainWindow::createActions(void)
     pnewAct->setShortcuts(QKeySequence::New);
     pnewAct->setStatusTip(tr("新建文件"));
     connect(pnewAct, &QAction::triggered, this, &MainWindow::newChild);
+
     pfileMenu->addAction(pnewAct);
 
     popenAct = new QAction(tr("打开(&O)"), this);
@@ -1228,4 +1232,14 @@ void MainWindow::openAssignFile(QString fileName)
             child->close();
         }
     }
+}
+
+bool MainWindow::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched == fileTab)
+        if (event->type() == QEvent::MouseButtonDblClick) {
+            newChild();
+            return true;
+        }
+    return false;
 }
