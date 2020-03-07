@@ -7,6 +7,7 @@
 #include <QFileInfo>
 #include <QLocalServer>
 #include <QLocalSocket>
+#include <QMutex>
 #include "singleapplication.h"
 #include "mainwindow.h"
 #include "debug.h"
@@ -15,6 +16,25 @@
 #ifdef WIN32
 #pragma execution_character_set("utf-8")
 #endif
+
+namespace textedit {
+
+singleApplication *singleApplication::_instance = nullptr;
+singleApplication::Garbo singleApplication::_garbo;
+QMutex singleApplication::_mutex;
+
+// 实例化该单例
+singleApplication *singleApplication::instance(int& argc, char** argv) {
+
+    if (!_instance) {
+        QMutexLocker locker(&_mutex);
+        if (!_instance) {
+            _instance = new singleApplication(argc, argv);
+        }
+    }
+
+    return _instance;
+}
 
 /**
   * @brief 构造函数
@@ -42,7 +62,8 @@ singleApplication::singleApplication(int & argc, char *argv[])
   */
  singleApplication::~singleApplication()
  {
-     if (m_localServer) {
+     qDebug() << "destruct singleApplication.";
+     if (singleApplication::m_localServer) {
          m_localServer->close();
          delete m_localServer;
      }
@@ -145,3 +166,5 @@ singleApplication::singleApplication(int & argc, char *argv[])
     disconnect(readEndpoint, &QLocalSocket::disconnected, readEndpoint, &QLocalSocket::deleteLater);
     delete readEndpoint;
  }
+
+} // namespace
